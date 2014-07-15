@@ -59,7 +59,8 @@ fillMissingMaxQEntries = function(data_w){
 }
 
 
-mergeMaxQDataWithKeys = function(data_l, keys){
+mergeMaxQDataWithKeys = function(data_l, keys, dataCol='Raw.file'){
+  setnames(data_l, dataCol, 'RawFile')
   unique_data = unique(data_l$RawFile)
   unique_keys = unique(keys$RawFile)
   keys_not_found = setdiff(unique_keys, unique_data)
