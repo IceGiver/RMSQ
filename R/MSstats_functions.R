@@ -12,7 +12,7 @@ library(RColorBrewer)
 library(grDevices)
 library(data.table)
 
-source("~/Projects/HPCKrogan/Scripts/MSPipeline/src/Conversion/AnnotateWithUniprot_lib.R")
+
 theme_set(theme_bw(base_size = 15, base_family="Helvetica"))
 
 ############
@@ -58,8 +58,9 @@ fillMissingMaxQEntries = function(data_w){
   return(data_w)
 }
 
+
 mergeMaxQDataWithKeys = function(data_l, keys){
-  unique_data = unique(data_l$Raw.file)
+  unique_data = unique(data_l$RawFile)
   unique_keys = unique(keys$RawFile)
   keys_not_found = setdiff(unique_keys, unique_data)
   data_not_found = setdiff(unique_data, unique_keys)
@@ -67,7 +68,6 @@ mergeMaxQDataWithKeys = function(data_l, keys){
   cat(sprintf("data found: %s \t data not in keys file:\n%s", length(unique_data)-length(data_not_found), paste(data_not_found, collapse='\t')))
   
   ## select only required attributes from MQ format
-  setnames(data_l, old='Raw.file', new='RawFile')
   data_l = merge(data_l, keys, by='RawFile')
   data_l
 }
@@ -93,6 +93,46 @@ normalizeSingle = function(data_w, NORMALIZATION_METHOD="scale"){
 dataToMSSFormat = function(d){
   tmp = data.frame(ProteinName=d$Proteins, PeptideSequence=d$Sequence, PrecursorCharge=NA, FragmentIon=NA, ProductCharge=d$Charge, IsotopeLabelType=d$IsotopeLabelType, Condition=d$Condition, BioReplicate=d$BioReplicate, Run=d$Run, Intensity=d$Intensity)
   tmp
+}
+
+plotHeat = function(mss_F, out_file){
+  heat_data = data.frame(mss_F, names=paste(mss_F$Protein,mss_F$uniprot_id,sep=' | '))
+  heat_data = heat_data[,c('names','Label','log2FC')]
+  heat_data_w = dcast(names ~ Label, data=heat_data, value.var='log2FC')
+  #gene_names = uniprot_to_gene_replace(uniprot_ac=heat_data_w$Protein)
+  rownames(heat_data_w) = heat_data_w$names
+  heat_data_w = heat_data_w[,-1]
+  heat_data_w[is.na(heat_data_w)]=0
+  max_val = ceiling(max(heat_data_w))
+  min_val = floor(min(heat_data_w))
+  extreme_val = max(max_val, abs(min_val))
+  if(extreme_val %% 2 != 0) extreme_val=extreme_val+1
+  bin_size=2
+  signed_bins = (extreme_val/bin_size)
+  colors_neg = rev(colorRampPalette(brewer.pal("Blues",n=extreme_val/bin_size))(signed_bins))
+  colors_pos = colorRampPalette(brewer.pal("Reds",n=extreme_val/bin_size))(signed_bins)
+  colors_tot = c(colors_neg, colors_pos)
+  
+  pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, file=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=F)
+  heat_data_w
+}
+
+significantHits = function(mss_results, labels='*', LFC=2, FDR=0.05){
+  ## get subset based on labels
+  selected_results = mss_results[grep(labels,mss_results$Label), ]
+  cat(sprintf('SELECTED LABELS FOR HEATMAP:\t%s\n',paste(unique(selected_results$Label), collapse=',')))
+  significant_proteins = selected_results[(!is.na(selected_results$log2FC) & selected_results$adj_pvalue <= FDR & abs(selected_results$log2FC) >= LFC) , 'Protein']
+  significant_results = selected_results[selected_results$Protein %in% significant_proteins, ]
+  return(significant_results)
+}
+
+logScale = function(data, format='wide', base=2){
+  if(format=='wide'){
+    data[,4:ncol(data)] = log(data[,4:ncol(data)], base=base)
+  }else{
+    data$Intensity = log(data$Intensity, base=base)
+  }
+  return(data)
 }
 
 ###################################
