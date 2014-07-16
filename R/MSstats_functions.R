@@ -18,6 +18,10 @@ theme_set(theme_bw(base_size = 15, base_family="Helvetica"))
 ############
 ## FUNCTIONS
 
+is.uniprotAc = function(identifier){
+  grepl('[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}',identifier)
+}
+
 filterMaxqData = function(data){
   data_selected = data[grep("^CON__|^REV__",data$Proteins, invert=T),]
   return(data_selected)
@@ -96,7 +100,7 @@ dataToMSSFormat = function(d){
   tmp
 }
 
-plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein'){
+plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein', cluster_cols=F){
   heat_data = data.frame(mss_F, names=names)
   #heat_data = mss_F[,c('uniprot_id','Label','log2FC')]
   heat_data_w = dcast(names ~ Label, data=heat_data, value.var='log2FC')
@@ -115,10 +119,10 @@ plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein'){
   colors_tot = c(colors_neg, colors_pos)
   
   if(is.null(labelOrder)){
-    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, file=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=T)  
+    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, file=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")  
   }else{
     heat_data_w = heat_data_w[,labelOrder]
-    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, file=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=F)
+    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, file=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")
   }
   
   heat_data_w
@@ -128,7 +132,7 @@ significantHits = function(mss_results, labels='*', LFC=c(-2,2), FDR=0.05){
   ## get subset based on labels
   selected_results = mss_results[grep(labels,mss_results$Label), ]
   cat(sprintf('SELECTED LABELS FOR HEATMAP:\t%s\n',paste(unique(selected_results$Label), collapse=',')))
-  significant_proteins = selected_results[(!is.na(selected_results$log2FC) & selected_results$adj_pvalue <= FDR & (selected_results$log2FC >= LFC[2] | selected_results$log2FC <= LFC[1])) , 'Protein']
+  significant_proteins = selected_results[(!is.na(selected_results$log2FC) & selected_results$adj.pvalue <= FDR & (selected_results$log2FC >= LFC[2] | selected_results$log2FC <= LFC[1])) , 'Protein']
   significant_results = selected_results[selected_results$Protein %in% significant_proteins, ]
   return(significant_results)
 }

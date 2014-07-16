@@ -1,0 +1,27 @@
+files :
+  keys : ~/Projects/HPCKrogan/Data/HeartPPG/data/input/031114-SH-22-69/031114-sh-22-69-BRG1-keys.txt
+  data : ~/Projects/HPCKrogan/Data/HeartPPG/data/input/031114-SH-22-69/052814-sh-22-69-evidence.txt
+  contrasts : ~/Projects/HPCKrogan/Data/HeartPPG/data/input/031114-SH-22-69/BRG1_MOCK_PER_D_contrast.txt
+  output : ~/Projects/HPCKrogan/Data/HeartPPG/summary/20140715/BRG1_MOCK_PER_D_results.txt
+filters: 
+  enabled : 1
+  contaminants : 1
+  protein_groups : remove #remove, explode
+normalization :
+  enabled : 1
+  method : quantile # none, scale, [PREY] as listed in the Protein column
+  fill_missing : 1
+  flatten_tr : 
+msstats :
+  enabled : 1
+  msstats_input :
+heatmap :
+  enabled : 1
+  msstats_output :
+  comparisons : 
+  LFC : -Inf 2
+  FDR : 0.05
+  cluster_cols : 0
+annotation :
+  enabled : 1
+  species : MOUSE #HUMAN
