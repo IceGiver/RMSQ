@@ -93,23 +93,32 @@ main <- function(opt){
       dmss = read.delim(config$msstats$msstats_input, stringsAsfactors=F)
     }
     qData = dataProcess(dmss, normalization=F)    
-    results = groupComparison(contrast.matrix=contrasts, data=qData, labeled=F)  
-    write.table(results$ComparisonResult, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
+    results = groupComparison(contrast.matrix=contrasts, data=qData, labeled=F)$ComparisonResult  
+    write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
     cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
   }
   
+  ## ANNOTATING RESULT FILE
   if(config$annotation$enabled){
     cat(">> ANNOTATING\n")
+    if(! is.null(config$annotation$msstats_output)) results = read.delim(config$annotation$msstats_output, stringsAsFactors=F)
     db = switch(config$annotation$species, MOUSE=org.Mm.eg.db, HUMAN=org.Hs.eg.db)
-    annotations = select(db, keys = as.character(unique(results$ComparisonResult$Protein)),columns=c("ENTREZID","SYMBOL","GENENAME"), keytype="UNIPROT")
-    mss_out = merge(results$ComparisonResult,annotations, by.x='Protein', by.y='UNIPROT', all.x=T)
+    annotations = select(db, keys = as.character(unique(results$Protein)),columns=c("ENTREZID","SYMBOL","GENENAME"), keytype="UNIPROT")
+    if(config$annotation$grouped){
+      annotations = aggregate(. ~ UNIPROT, data=annotations, FUN=function(x)paste(unique(x),collapse=',')) 
+    }
+    mss_out = merge(results, annotations, by.x='Protein', by.y='UNIPROT', all.x=T) 
+    config$files$output = gsub('.txt','-ann.txt',config$files$output)
+    cat(sprintf('\tCHANGED OUPT FILE TO\t%s\n',config$files$output))
   }else{
-    mss_out = results$ComparisonResult
+    mss_out = results
   }
   write.table(mss_out, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
-  mss_out = read.delim(file=config$files$output, stringsAsFactors=F)  
   cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
+  mss_out = read.delim(file=config$files$output, stringsAsFactors=F)  
+  cat(sprintf(">> READ FROM\t%s\n",config$files$output))
   
+  ## REPRESENTING RESULTS AS HEATMAP
   if(config$heatmap$enabled){
     cat(">> HEATMAP\n")
     if(!is.null(config$heatmap$msstats_output)){
