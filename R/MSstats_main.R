@@ -82,12 +82,14 @@ main <- function(opt){
       data_l_nonref = data_l[!(data_l$Raw.file %in% ref_files) & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
       data_l_ref_n = normalizeToReference(data_l_ref=data_l_ref, ref_protein = config$normalization$reference, output_file = config$files$output)
       data_fn= rbind(data_l_ref_n, data_l_nonref)
+      data_fn = castMaxQToWide(data_fn)
     }else{
-      data_fn = data_f
+      data_fn = data_w
     }
+    ## herafter we assume data_fn is in wide format
+    
     if(config$normalization$fill_missing){
       cat("\tMISSING VALUES\tFILL\n")
-      data_w = castMaxQToWide(data_fn)
       data_fn = fillMissingMaxQEntries(data_w)
     }
   }
@@ -97,6 +99,10 @@ main <- function(opt){
     cat(">> MSSTATS\n")
     if(is.null(config$msstats$msstats_input)){
       data_l = meltMaxQToLong(data_fn)
+      
+      ## if missing entries were not filled we need to remove the 0, Inf and NaN values to replace them with NA
+      if(!config$normalization$fill_missing) data_l = cleanMissingMaxQEntries(data_l)
+      
       data_all = mergeMaxQDataWithKeys(data_l, keys, dataCol='Raw.file')
       dmss = dataToMSSFormat(data_all)  
     }else{

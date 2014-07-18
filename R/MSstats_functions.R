@@ -62,6 +62,10 @@ fillMissingMaxQEntries = function(data_w){
   return(data_w)
 }
 
+cleanMissingMaxQEntries = function(data_l){
+  data_l[data_l$Intensity <= 0 | is.infinite(data_l$Intensity) | is.nan(data_l$Intensity),]$Intensity=NA
+  return(data_l)
+}
 
 mergeMaxQDataWithKeys = function(data_l, keys, dataCol='Raw.file'){
   setnames(data_l, dataCol, 'RawFile')
