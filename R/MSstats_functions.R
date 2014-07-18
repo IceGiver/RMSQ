@@ -23,7 +23,7 @@ is.uniprotAc = function(identifier){
 }
 
 filterMaxqData = function(data){
-  data_selected = data[grep("^CON__|^REV__",data$Proteins, invert=T),]
+  data_selected = data[grep("CON__|REV__",data$Proteins, invert=T),]
   return(data_selected)
 }
 
@@ -69,8 +69,8 @@ mergeMaxQDataWithKeys = function(data_l, keys, dataCol='Raw.file'){
   unique_keys = unique(keys$RawFile)
   keys_not_found = setdiff(unique_keys, unique_data)
   data_not_found = setdiff(unique_data, unique_keys)
-  cat(sprintf("keys found: %s \t keys not in data file:\n%s", length(unique_keys)-length(keys_not_found), paste(keys_not_found,collapse='\t')))
-  cat(sprintf("data found: %s \t data not in keys file:\n%s", length(unique_data)-length(data_not_found), paste(data_not_found, collapse='\t')))
+  cat(sprintf("keys found: %s \t keys not in data file:\n%s\n", length(unique_keys)-length(keys_not_found), paste(keys_not_found,collapse='\t')))
+  cat(sprintf("data found: %s \t data not in keys file:\n%s\n", length(unique_data)-length(data_not_found), paste(data_not_found, collapse='\t')))
   
   ## select only required attributes from MQ format
   data_l = merge(data_l, keys, by='RawFile')
@@ -149,95 +149,61 @@ logScale = function(data, format='wide', base=2){
 ###################################
 ## doesnt work so far with new code
 
-normalizeToReference = function(d, keys, ref_protein=BAIT_REF, PDF=T, PRINT_DIR=""){
-  
-  ## merge background normalization info to data
-  
-  #d_l2 = merge(d, unique(keys[,c("BioReplicate","NormalizationGroup")]), by=c("BioReplicate"))
-  d_l2=d
-  ## log transform data
-  d_l2$Intensity = log2(d$Intensity)  
-  
-  ########## ALL PROTEINS BEFORE 
-  ##############################
-  
+
+peptideDistribution = function(data_l, output_file, PDF=T){
   ## look at peptide distribution of all proteins
-  if(PDF) pdf(sprintf("%s/AllProteinDistribution_b.pdf",PRINT_DIR), width=10, height=7)
-  p = ggplot(data=d_l2, aes(x=BioReplicate, y=Intensity))
+  if(PDF) pdf(output_file, width=10, height=7)
+  p = ggplot(data=data_l, aes(x=Raw.file, y=Intensity))
   print(p + geom_boxplot() +
           theme(axis.text.x=element_text(angle=-90)))  
   if(PDF) dev.off()
+}
+
+peptideIntensityPerFile = function(ref_peptides, output_file, PDF=T){
+  if(PDF) pdf(output_file, width=10, height=7)
+  p = ggplot(data=ref_peptides, aes(x=Raw.file, y=Intensity, group=protein_id))
+  print(p + geom_line(colour="grey") + 
+          stat_summary(aes(group=1), geom="point", fun.y=median, shape=17, size=3, colour="darkred") + 
+          ylab("Intensity") +
+          theme(axis.text.x=element_text(angle=-90)))
+  if(PDF) dev.off()
+}
+
+normalizeToReference = function(data_l_ref, ref_protein, PDF=T, output_file){
   
-  ########## REF PROTEINS BEFORE 
-  ##############################
+  data_l_ref$Intensity = log2(data_l_ref$Intensity)  
+  
+  ## SAMPLES WITH REF PROTEINS BEFORE 
+  peptideDistribution(data_l_ref, gsub('.txt','-protein-dist-b.pdf',output_file))
   
   ## compute the average value for background reference peptides over all samples (background+bait)
   ## normalize against background reference proteins
-  ref_peptides = d_l2[grep(refprotein, d_l2$Proteins),]
+  ref_peptides = data_l_ref[grep(ref_protein, data_l_ref$Proteins),]
   ref_peptides = data.frame(ref_peptides, protein_id=as.character(paste0(ref_peptides$Sequence,ref_peptides$Charge)), stringsAsFactors=F)
-  ref_peptides_counts = aggregate(BioReplicate ~ protein_id,data=ref_peptides,FUN=function(x)length(unique(x)))
-  unique_replicates = length(unique(d_l2$BioReplicate))
-  complete_observations = ref_peptides_counts[ref_peptides_counts$BioReplicate==unique_replicates,'protein_id']
+  ref_peptides_counts = aggregate(Raw.file ~ protein_id,data=ref_peptides,FUN=function(x)length(unique(x)))
+  unique_files = length(unique(data_l_ref$Raw.file))
+  complete_observations = ref_peptides_counts[ref_peptides_counts$Raw.file == unique_files,'protein_id']
   ref_peptides_complete = ref_peptides[ref_peptides$protein_id %in% complete_observations,]
   
-  ## look at peptide distribution of ref proteins
-  if(PDF) pdf(sprintf("%s/RefProteins_b.pdf",PRINT_DIR), width=10, height=7)
-  p = ggplot(data=ref_peptides_complete, aes(x=BioReplicate, y=Intensity))
-  print(p + geom_boxplot() +
-          theme(axis.text.x=element_text(angle=-90)))  
-  if(PDF) dev.off()
-  
   ## look at their individual signal over replicates
-  if(PDF) pdf(sprintf("%s/RefPeptides_b.pdf",PRINT_DIR), width=10, height=7)
-  p = ggplot(data=ref_peptides_complete, aes(x=BioReplicate, y=Intensity, group=protein_id))
-  print(p + geom_line(colour="grey") + 
-          stat_smooth(aes(group=1), method = "lm",formula=y ~ poly(x, 6), colour="red", size=1) + 
-          stat_summary(aes(group=1), geom="point", fun.y=median, shape=17, size=3, colour="darkred") + 
-          ylab("Intensity") +
-          ylim(15,30) +
-          theme(axis.text.x=element_text(angle=-90)))
-  if(PDF) dev.off()
+  peptideIntensityPerFile(ref_peptides_complete[!is.na(ref_peptides_complete$Intensity) & is.finite(ref_peptides_complete$Intensity),], gsub('.txt','-peptide-signal-b.pdf',output_file))
   
-  ref_peptides_avg_per_rep = aggregate(Intensity ~ BioReplicate, data=ref_peptides_complete, FUN=median)
+  ref_peptides_avg_per_rep = aggregate(Intensity ~ Raw.file, data=ref_peptides_complete, FUN=median)
   ref_peptides_avg_all = median(ref_peptides_avg_per_rep$Intensity)
-  ref_peptides_avg_per_rep = data.frame(BioReplicate=ref_peptides_avg_per_rep$BioReplicate, correction=ref_peptides_avg_all-ref_peptides_avg_per_rep$Intensity)
-  ref_peptides_complete = merge(ref_peptides_complete, ref_peptides_avg_per_rep, by='BioReplicate', all.x=T)
+  ref_peptides_avg_per_rep = data.frame(Raw.file=ref_peptides_avg_per_rep$Raw.file, correction=ref_peptides_avg_all-ref_peptides_avg_per_rep$Intensity)
+  ref_peptides_complete = merge(ref_peptides_complete, ref_peptides_avg_per_rep, by='Raw.file', all.x=T)
   ref_peptides_complete = data.frame(ref_peptides_complete, IntensityCorrected=ref_peptides_complete$Intensity+ref_peptides_complete$correction)
   
-  ########## REF PROTEINS AFTER
-  ##############################
+  ref_peptides_complete$Intensity=ref_peptides_complete$IntensityCorrected
+  peptideIntensityPerFile(ref_peptides_complete[!is.na(ref_peptides_complete$Intensity) & is.finite(ref_peptides_complete$Intensity),], gsub('.txt','-peptide-signal-a.pdf',output_file))
+
+  data_l_ref = merge(data_l_ref, ref_peptides_avg_per_rep, by='Raw.file', all.x=T)
+  data_l_ref$Intensity=data_l_ref$Intensity+data_l_ref$correction
+  data_l_ref = data_l_ref[,-(ncol(data_l_ref))]
   
-  ## look at peptide distribution of ref proteins
-  if(PDF) pdf(sprintf("%s/RefProteins_a.pdf",PRINT_DIR), width=10, height=7)
-  p = ggplot(data=ref_peptides_complete, aes(x=BioReplicate, y=IntensityCorrected))
-  print(p + geom_boxplot() +
-          theme(axis.text.x=element_text(angle=-90)))  
-  if(PDF) dev.off()
+  ## SAMPLES WITH REF PROTEINS AFTER
+  peptideDistribution(data_l_ref, gsub('.txt','-protein-dist-a.pdf',output_file))
+  data_l_ref$Intensity=2^(data_l_ref$Intensity)
   
-  ## look at their individual signal over replicates
-  if(PDF) pdf(sprintf("%s/RefPeptides_a.pdf",PRINT_DIR), width=10, height=7)
-  p = ggplot(data=ref_peptides_complete, aes(x=BioReplicate, y=IntensityCorrected, group=protein_id))
-  print(p + geom_line(colour="grey") + 
-          stat_smooth(aes(group=1), method = "lm",formula=y ~ poly(x, 6), colour="red", size=1) + 
-          stat_summary(aes(group=1), geom="point", fun.y=median, shape=17, size=3, colour="darkred") + 
-          ylab("Intensity") +
-          ylim(15,30) +
-          theme(axis.text.x=element_text(angle=-90)))
-  if(PDF) dev.off()
-  
-  d_l2 = merge(d_l2, ref_peptides_avg_per_rep, by='BioReplicate', all.x=T)
-  d_l2 = data.frame(d_l2, IntensityCorrected=d_l2$Intensity+d_l2$correction)
-  
-  ########## ALL PROTEINS BEFORE 
-  ##############################
-  
-  ## look at peptide distribution of all proteins
-  if(PDF) pdf(sprintf("%s/AllProteinDistribution_a.pdf",PRINT_DIR), width=10, height=7)
-  p = ggplot(data=d_l2, aes(x=BioReplicate, y=IntensityCorrected))
-  print(p + geom_boxplot() +
-          theme(axis.text.x=element_text(angle=-90)))  
-  if(PDF) dev.off()
-  
-  d_l2$Intensity = 2^d_l2$IntensityCorrected
-  d_l2[,c("Run","Raw.file","Condition","BioReplicate","Proteins","Sequence","Charge","IsotopeLabelType","Intensity","NormalizationGroup")]
+  return(data_l_ref)
 }

@@ -64,20 +64,31 @@ main <- function(opt){
   ## NORMALIZATION
   if(config$normalization$enabled){
     cat(">> NORMALIZING\n")
-    data_w = castMaxQToWidePTM(data_f)
-    if(config$normalization$fill_missing){
-      cat("\tMISSING VALUES\tFILL\n")
-      data_f = fillMissingMaxQEntries(data_w)
-    } 
     
-    if(grep('scale|quantile|cyclicloess',config$normalization$method)){
+    if(config$files$sequence_type == 'modified'){
+      data_w = castMaxQToWidePTM(data_f)  
+    }else if(config$files$sequence_type == 'unmodified'){
+      data_w = castMaxQToWide(data_f)  
+    }
+    data_l = meltMaxQToLong(data_w)
+    
+    if(grepl('scale|quantile|cyclicloess',config$normalization$method)){
       cat(sprintf("\tNORMALIZATION\t%s\n",config$normalization$method))
-      data_fn = normalizeSingle(data_w=data_f, NORMALIZATION_METHOD=config$normalization$method)  
-    }else if(is.uniprot(config$normalization$method)){
-      cat(sprintf("\tNORMALIZATION\tTO REFERENCE\t%s\n",config$normalization$method))
-      cat('\tNOT YET IMPLEMENTED\t NO NORMALIZATION !!')
+      data_fn = normalizeSingle(data_w=data_w, NORMALIZATION_METHOD=config$normalization$method)  
+    }else if(grepl('reference',config$normalization$method) & is.uniprotAc(config$normalization$reference)){
+      cat(sprintf("\tNORMALIZATION\tTO REFERENCE\t%s\n",config$normalization$reference))
+      ref_files = keys[keys$NormalizationGroup == 'REFERENCE', 'RawFile']
+      data_l_ref = data_l[data_l$Raw.file %in% ref_files & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
+      data_l_nonref = data_l[!(data_l$Raw.file %in% ref_files) & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
+      data_l_ref_n = normalizeToReference(data_l_ref=data_l_ref, ref_protein = config$normalization$reference, output_file = config$files$output)
+      data_fn= rbind(data_l_ref_n, data_l_nonref)
     }else{
       data_fn = data_f
+    }
+    if(config$normalization$fill_missing){
+      cat("\tMISSING VALUES\tFILL\n")
+      data_w = castMaxQToWide(data_fn)
+      data_fn = fillMissingMaxQEntries(data_w)
     }
   }
   
