@@ -67,6 +67,14 @@ cleanMissingMaxQEntries = function(data_l){
   return(data_l)
 }
 
+flattenMaxQTechRepeats = function(data_l){
+  
+}
+
+flattenKeysTechRepeats = function(keys){
+  aggregate(. ~ BioReplicate, data=keys, FUN=function(x)paste(unique(x),collapse='|'))
+}
+
 mergeMaxQDataWithKeys = function(data_l, keys, dataCol='Raw.file'){
   setnames(data_l, dataCol, 'RawFile')
   unique_data = unique(data_l$RawFile)

@@ -65,6 +65,7 @@ main <- function(opt){
   if(config$normalization$enabled){
     cat(">> NORMALIZING\n")
     
+    ## formatting
     if(config$files$sequence_type == 'modified'){
       data_w = castMaxQToWidePTM(data_f)  
     }else if(config$files$sequence_type == 'unmodified'){
@@ -72,10 +73,25 @@ main <- function(opt){
     }
     data_l = meltMaxQToLong(data_w)
     
+    ## flattening tech repeats per biological replicate
+    if(config$normalization$aggregate_tr){
+      cat("\tAGGREGATING TECHNICAL REPEATS\n")
+      newkeys = flattenKeysTechRepeats(keys)
+      keys_tmp = merge(keys, newkeys[,c('BioReplicate','RawFile')], by='BioReplicate')
+      setnames(keys_tmp,c('RawFile.x','RawFile.y'),c('RawFile','RawFileCombined'))
+      tmp = merge(data_l, keys_tmp, by.x='Raw.file',by.y='RawFile')
+      tmp = aggregate(Intensity ~ RawFileCombined + Proteins + Sequence + Charge, FUN=max, data=tmp)
+      data_l = tmp
+      setnames(data_l,'RawFileCombined','Raw.file')
+      data_w = castMaxQToWide(data_l)
+      keys = newkeys
+    }
+    
+    ## normalization
     if(grepl('scale|quantile|cyclicloess',config$normalization$method)){
       cat(sprintf("\tNORMALIZATION\t%s\n",config$normalization$method))
       data_fn = normalizeSingle(data_w=data_w, NORMALIZATION_METHOD=config$normalization$method)  
-    }else if(grepl('reference',config$normalization$method) & is.uniprotAc(config$normalization$reference)){
+    }else if(grepl('reference',config$normalization$method) & config$normalization$reference %in% data_l$Proteins){
       cat(sprintf("\tNORMALIZATION\tTO REFERENCE\t%s\n",config$normalization$reference))
       ref_files = keys[keys$NormalizationGroup == 'REFERENCE', 'RawFile']
       data_l_ref = data_l[data_l$Raw.file %in% ref_files & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
@@ -126,7 +142,7 @@ main <- function(opt){
     }
     mss_out = merge(results, annotations, by.x='Protein', by.y='UNIPROT', all.x=T) 
     config$files$output = gsub('.txt','-ann.txt',config$files$output)
-    cat(sprintf('\tCHANGED OUPT FILE TO\t%s\n',config$files$output))
+    cat(sprintf('\tCHANGED OUTPUT FILE TO\t%s\n',config$files$output))
   }else{
     mss_out = results
   }
@@ -139,12 +155,15 @@ main <- function(opt){
   if(config$heatmap$enabled){
     cat(">> HEATMAP\n")
     if(!is.null(config$heatmap$msstats_output)){
-      mss_out = read.delim(config$heatmap$msstats_output, stringsAsFactors=F)  
+      mss_out = read.delim(config$heatmap$msstats_output, stringsAsFactors=F) 
+      config$files$output = config$heatmap$msstats_output
     }
     
     lfc_lower = as.numeric(unlist(strsplit(config$heatmap$LFC,split=" "))[1])
     lfc_upper = as.numeric(unlist(strsplit(config$heatmap$LFC,split=" "))[2])
-    all_contrasts = significantHits(mss_out,labels='*',LFC=c(lfc_lower,lfc_upper),FDR=config$heatmap$FDR)
+    selected_labels = config$heatmap$comparisons
+    if(is.null(selected_labels) | selected_labels=='') selected_labels='*'
+    all_contrasts = significantHits(mss_out,labels=selected_labels,LFC=c(lfc_lower,lfc_upper),FDR=config$heatmap$FDR)
     cat(sprintf("\t SELECTED HITS BETWEEN %s AND %s AT %s FDR\t%s\n",lfc_lower, lfc_upper, config$heatmap$FDR, nrow(all_contrasts))) 
     heat_data_w = plotHeat(all_contrasts, gsub('.txt','-sign.pdf',config$files$output), names=paste(all_contrasts$Protein,all_contrasts$SYMBOL, sep=' | '), cluster_cols = config$heatmap$cluster_cols)
   } 
@@ -156,42 +175,3 @@ if(!exists('DEBUG') || DEBUG==F){
 }else{
   main(opt)
 } 
-
-# #########
-# ## CONFIG 
-# 
-# SAMPLE=F
-# SAMPLE_SIZE=100
-# NORMALIZE=T
-# PREPROCESS=T
-# MSSTATS=T
-# NORMALIZATION_METHOD="quantile" ##scale, quantile, cyclicloess, toref
-# NORMALIZE_BATCH="ALL" ##CONDITION, ALL, TOREF
-# FILL_MISSING=T
-# SPECIES="MOUSE"
-# FDR = 0.05 
-# LFC = 2
-# REMOVE_PROTEINGROUPS=F
-# VERSION=1
-# 
-# keys_file='data/input/031114-SH-22-69/031114-sh-22-69-BRG1-keys.txt'
-# data_file='data/input/031114-SH-22-69/052814-sh-22-69-evidence.txt'
-# contrast_file = 'data/input/031114-SH-22-69/BRG1_MOCK_PER_D_contrast.txt'
-# 
-# BASE_NAME=sprintf("BRG1_MOCK_N-%s_M-%s",NORMALIZE_BATCH, FILL_MISSING)
-# PRINT_DIR=sprintf("summary/20140714/%s",BASE_NAME)
-# dir.create(file.path(PRINT_DIR), showWarnings = FALSE)
-# out_file = sprintf('%s/%s_v%s.txt',PRINT_DIR,BASE_NAME,VERSION)
-# 
-# #######
-# ## MAIN
-# 
-# 
-# 
-# ###
-# 
-# mss_out = read.delim(gsub('.txt','-res.txt',out_file), stringsAsFactors=F)
-# 
-# 
-# mss_out_with_genes = merge(mss_out, gene_mapping, by.x='Protein', by.y='UNIPROT', all.x=T)
-# mss_out_with_genes = mss_out_with_genes[,c("Protein","Label","log2FC","adj_pvalue","uniprot_id","ENTREZID","SYMBOL","GENENAME","description")]
