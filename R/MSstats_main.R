@@ -129,6 +129,7 @@ main <- function(opt){
     results = groupComparison(contrast.matrix=contrasts, data=qData, labeled=F)$ComparisonResult  
     write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
     cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
+    mss_out = results
   }
   
   ## ANNOTATING RESULT FILE
@@ -143,13 +144,9 @@ main <- function(opt){
     mss_out = merge(results, annotations, by.x='Protein', by.y='UNIPROT', all.x=T) 
     config$files$output = gsub('.txt','-ann.txt',config$files$output)
     cat(sprintf('\tCHANGED OUTPUT FILE TO\t%s\n',config$files$output))
-  }else{
-    mss_out = results
+    write.table(mss_out, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
+    cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
   }
-  write.table(mss_out, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
-  cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
-  mss_out = read.delim(file=config$files$output, stringsAsFactors=F)  
-  cat(sprintf(">> READ FROM\t%s\n",config$files$output))
   
   ## REPRESENTING RESULTS AS HEATMAP
   if(config$heatmap$enabled){
@@ -164,7 +161,7 @@ main <- function(opt){
     selected_labels = config$heatmap$comparisons
     if(is.null(selected_labels) || selected_labels=='') selected_labels='*'
     all_contrasts = significantHits(mss_out,labels=selected_labels,LFC=c(lfc_lower,lfc_upper),FDR=config$heatmap$FDR)
-    cat(sprintf("\t SELECTED HITS BETWEEN %s AND %s AT %s FDR\t%s\n",lfc_lower, lfc_upper, config$heatmap$FDR, nrow(all_contrasts))) 
+    cat(sprintf("\tSELECTED HITS BETWEEN %s AND %s AT %s FDR\t%s\n",lfc_lower, lfc_upper, config$heatmap$FDR, nrow(all_contrasts))) 
     heat_data_w = plotHeat(all_contrasts, gsub('.txt','-sign.pdf',config$files$output), names=paste(all_contrasts$Protein,all_contrasts$SYMBOL, sep=' | '), cluster_cols = config$heatmap$cluster_cols)
   } 
 }
