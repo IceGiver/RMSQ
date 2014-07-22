@@ -143,7 +143,8 @@ plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein', cluster_c
 significantHits = function(mss_results, labels='*', LFC=c(-2,2), FDR=0.05){
   ## get subset based on labels
   selected_results = mss_results[grep(labels,mss_results$Label), ]
-  cat(sprintf('SELECTED LABELS FOR HEATMAP:\t%s\n',paste(unique(selected_results$Label), collapse=',')))
+  cat(sprintf('\tAVAILABLE LABELS FOR HEATMAP:\t%s\n',paste(unique(mss_results$Label), collapse=',')))
+  cat(sprintf('\tSELECTED LABELS FOR HEATMAP:\t%s\n',paste(unique(selected_results$Label), collapse=',')))
   significant_proteins = selected_results[(!is.na(selected_results$log2FC) & selected_results$adj.pvalue <= FDR & (selected_results$log2FC >= LFC[2] | selected_results$log2FC <= LFC[1])) , 'Protein']
   significant_results = selected_results[selected_results$Protein %in% significant_proteins, ]
   return(significant_results)
