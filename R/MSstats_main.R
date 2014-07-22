@@ -162,7 +162,7 @@ main <- function(opt){
     lfc_lower = as.numeric(unlist(strsplit(config$heatmap$LFC,split=" "))[1])
     lfc_upper = as.numeric(unlist(strsplit(config$heatmap$LFC,split=" "))[2])
     selected_labels = config$heatmap$comparisons
-    if(is.null(selected_labels) | selected_labels=='') selected_labels='*'
+    if(is.null(selected_labels) || selected_labels=='') selected_labels='*'
     all_contrasts = significantHits(mss_out,labels=selected_labels,LFC=c(lfc_lower,lfc_upper),FDR=config$heatmap$FDR)
     cat(sprintf("\t SELECTED HITS BETWEEN %s AND %s AT %s FDR\t%s\n",lfc_lower, lfc_upper, config$heatmap$FDR, nrow(all_contrasts))) 
     heat_data_w = plotHeat(all_contrasts, gsub('.txt','-sign.pdf',config$files$output), names=paste(all_contrasts$Protein,all_contrasts$SYMBOL, sep=' | '), cluster_cols = config$heatmap$cluster_cols)
