@@ -1,16 +1,15 @@
 #! /usr/bin/Rscript --vanilla --default-packages=utils
-library(reshape2)
-library(limma)
-library(stats)
-library(graphics)
-library(ggplot2)
+suppressMessages(library(grDevices))
+suppressMessages(library(stats))
+suppressMessages(library(graphics))
+suppressMessages(library(reshape2))
+suppressMessages(library(limma))
+suppressMessages(library(ggplot2))
 #library(MSstats.daily)
-library(MSstats)
-library(pheatmap)
-library(RColorBrewer)
-library(grDevices)
-library(data.table)
-
+suppressMessages(library(MSstats))
+suppressMessages(library(pheatmap))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(data.table))
 
 theme_set(theme_bw(base_size = 15, base_family="Helvetica"))
 
@@ -178,6 +177,28 @@ peptideIntensityPerFile = function(ref_peptides, output_file, PDF=T){
           stat_summary(aes(group=1), geom="point", fun.y=median, shape=17, size=3, colour="darkred") + 
           ylab("Intensity") +
           theme(axis.text.x=element_text(angle=-90)))
+  if(PDF) dev.off()
+}
+
+volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='', PDF=T){
+  
+  min_x = -ceiling(max(abs(mss_results_sel$log2FC)))
+  max_x = ceiling(max(abs(mss_results_sel$log2FC)))
+  min_pval = min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)
+  mss_results_sel[mss_results_sel$adj.pvalue == 0,]$adj.pvalue = min_pval
+  max_y = ceiling(-log2(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)))
+  
+  # top
+  
+  if(PDF) pdf(file_name, width=7, height=7)
+  p = ggplot(mss_results_sel, aes(x=log2FC,y=-log2(adj.pvalue)))
+  print(p + geom_point(colour='grey') + 
+    geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC>=lfc_upper,], aes(x=log2FC,y=-log2(adj.pvalue)), colour='red', size=2) +
+    geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC<=lfc_lower,], aes(x=log2FC,y=-log2(adj.pvalue)), colour='blue', size=2) +
+    geom_vline(xintercept=c(lfc_lower,lfc_upper), lty='dashed') + 
+    geom_hline(yintercept=-log2(FDR), lty='dashed') + 
+    xlim(min_x,max_x) + 
+    ylim(0,max_y))
   if(PDF) dev.off()
 }
 

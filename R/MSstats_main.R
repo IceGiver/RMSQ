@@ -1,11 +1,28 @@
 #! /usr/bin/Rscript --vanilla
+
+###############################
+## FILE AND LIB LOADING #######
+
+cat(">> LOADING EXTERNAL FILES AND LIBRARIES\n")
+
 suppressMessages(library(getopt))
 suppressMessages(library(yaml))
 suppressMessages(library(org.Hs.eg.db))
 suppressMessages(library(org.Mm.eg.db))
 
+# set source directory
+args <- commandArgs(trailingOnly = F) 
+scriptPath <- normalizePath(dirname(sub("^--file=", "", args[grep("^--file=", args)])))
+
+## load all external files
+if(length(scriptPath)==0){
+  source("R/MSstats_functions.R")
+}else{
+  source(paste(scriptPath,"/MSstats_functions.R",sep=""))  
+}
+
 #########################
-## MIST MAIN FILE #######
+## CONFIG LOADING #######
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -22,23 +39,18 @@ if ( !is.null(opt$help) ) {
   q(status=1);
 }
 
-# set source directory
-args <- commandArgs(trailingOnly = F) 
-scriptPath <- normalizePath(dirname(sub("^--file=", "", args[grep("^--file=", args)])))
-
-## load all externeal files
-if(length(scriptPath)==0){
-  source("R/MSstats_functions.R")
-}else{
-  source(paste(scriptPath,"/MSstats_functions.R",sep=""))  
-}
+###############
+## MAIN #######
 
 main <- function(opt){
+  cat(">> MSSTATS PIPELINE\n")
   config = tryCatch(yaml.load_file(opt$config), error = function(e) {cat(opt$config);break} )
   
-  data = data.table(read.delim(config$files$data, stringsAsFactors=F))
-  keys = read.delim(config$files$keys, stringsAsFactors=F)
-  contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
+  if(config$data$enabled){
+    data = data.table(read.delim(config$files$data, stringsAsFactors=F))
+    keys = read.delim(config$files$keys, stringsAsFactors=F)
+    contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))  
+  }
   
   ## FILTERING
   if(config$filters$enabled){
@@ -149,20 +161,38 @@ main <- function(opt){
   }
   
   ## REPRESENTING RESULTS AS HEATMAP
-  if(config$heatmap$enabled){
-    cat(">> HEATMAP\n")
-    if(!is.null(config$heatmap$msstats_output)){
-      mss_out = read.delim(config$heatmap$msstats_output, stringsAsFactors=F) 
-      config$files$output = config$heatmap$msstats_output
+  if(config$plots$enabled){
+    cat(">> PLOTTING\n")
+    if(!is.null(config$plots$msstats_output)){
+      mss_out = read.delim(config$plots$msstats_output, stringsAsFactors=F) 
+      config$files$output = config$plots$msstats_output
     }
     
-    lfc_lower = as.numeric(unlist(strsplit(config$heatmap$LFC,split=" "))[1])
-    lfc_upper = as.numeric(unlist(strsplit(config$heatmap$LFC,split=" "))[2])
-    selected_labels = config$heatmap$comparisons
+    lfc_lower = as.numeric(unlist(strsplit(config$plots$LFC,split=" "))[1])
+    lfc_upper = as.numeric(unlist(strsplit(config$plots$LFC,split=" "))[2])
+    
+    ## select subset of labels for heatmap and volcan plots
+    selected_labels = config$plots$comparisons
     if(is.null(selected_labels) || selected_labels=='') selected_labels='*'
-    all_contrasts = significantHits(mss_out,labels=selected_labels,LFC=c(lfc_lower,lfc_upper),FDR=config$heatmap$FDR)
-    cat(sprintf("\tSELECTED HITS BETWEEN %s AND %s AT %s FDR\t%s\n",lfc_lower, lfc_upper, config$heatmap$FDR, nrow(all_contrasts))) 
-    heat_data_w = plotHeat(all_contrasts, gsub('.txt','-sign.pdf',config$files$output), names=paste(all_contrasts$Protein,all_contrasts$SYMBOL, sep=' | '), cluster_cols = config$heatmap$cluster_cols)
+    
+    ## select data points for heatmap by LFC & FDR criterium in single condition and adding corresponding data points from the other conditions
+    sign_hits = significantHits(mss_out,labels=selected_labels,LFC=c(lfc_lower,lfc_upper),FDR=config$plots$FDR)
+    sign_labels = unique(sign_hits$Label)
+    cat(sprintf("\tSELECTED HITS FOR PLOTS WITH LFC BETWEEN %s AND %s AT %s FDR:\t%s\n",lfc_lower, lfc_upper, config$plots$FDR, nrow(sign_hits)/length(sign_labels))) 
+    
+    ## plot heat map for all contrasts
+    if(config$plots$heatmap){
+      heat_data_w = plotHeat(sign_hits, gsub('.txt','-sign.pdf',config$files$output), names=paste(sign_hits$Protein,sign_hits$SYMBOL, sep=' | '), cluster_cols = config$plots$heatmap_cluster_cols)  
+    }
+    
+    if(config$plots$volcano){
+      ## make a volcano plat per contrast
+      for(l in sign_labels){
+        mss_results_sel = mss_out[mss_out$Label == l, ]
+        file_name = gsub('.txt',sprintf('-%s.pdf',l),config$files$output)
+        volcanoPlot(mss_results_sel, lfc_upper, lfc_lower, FDR=config$plots$FDR, file_name =file_name)
+      }  
+    }  
   } 
 }
 
