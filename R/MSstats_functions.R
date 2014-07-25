@@ -184,13 +184,13 @@ volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='',
   
   min_x = -ceiling(max(abs(mss_results_sel$log2FC)))
   max_x = ceiling(max(abs(mss_results_sel$log2FC)))
-  min_pval = min(mss_results_sel[mss_results_sel$bb > 0,]$adj.pvalue)
-  mss_results_sel[mss_results_sel$adj.pvalue == 0,]$adj.pvalue = min_pval
+  min_pval = min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)
+  #mss_results_sel[mss_results_sel$adj.pvalue == 0,]$adj.pvalue = min_pval
   max_y = ceiling(-log2(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)))
   
   # top
   
-  if(PDF) pdf(file_name, width=7, height=7)
+  if(PDF) pdf(file_name, width=14, height=7*ceiling(length(unique(mss_results_sel$Label))/8))
   p = ggplot(mss_results_sel, aes(x=log2FC,y=-log2(adj.pvalue)))
   print(p + geom_point(colour='grey') + 
     geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC>=lfc_upper,], aes(x=log2FC,y=-log2(adj.pvalue)), colour='red', size=2) +
@@ -198,7 +198,8 @@ volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='',
     geom_vline(xintercept=c(lfc_lower,lfc_upper), lty='dashed') + 
     geom_hline(yintercept=-log2(FDR), lty='dashed') + 
     xlim(min_x,max_x) + 
-    ylim(0,max_y))
+    ylim(0,max_y) + 
+    facet_wrap(facets = ~Label, ncol = 4, scales = 'fixed')) 
   if(PDF) dev.off()
 }
 

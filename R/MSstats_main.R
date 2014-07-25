@@ -149,7 +149,7 @@ main <- function(opt){
     cat(">> ANNOTATING\n")
     if(! is.null(config$output_extras$msstats_output)) results = read.delim(config$output_extras$msstats_output, stringsAsFactors=F)
     mart = useMart(biomart = 'unimart', dataset = 'uniprot')
-    mart_anns = select(mart, keytype='accession', columns=c('accession','name','protein_name','gene_name','ensembl_id'), keys=as.character(unique(results$Protein)))
+    mart_anns = AnnotationDbi::select(mart, keytype='accession', columns=c('accession','name','protein_name','gene_name','ensembl_id'), keys=as.character(unique(results$Protein)))
     mart_anns = aggregate(. ~ accession, data=mart_anns, FUN=function(x)paste(unique(x),collapse=',')) 
     mss_out = merge(results, mart_anns, by.x='Protein', by.y='accession', all.x=T) 
     config$files$output = gsub('.txt','-ann.txt',config$files$output)
@@ -170,7 +170,7 @@ main <- function(opt){
       ## select data points for heatmap by LFC & FDR criterium in single condition and adding corresponding data points from the other conditions
       sign_hits = significantHits(mss_out,labels=selected_labels,LFC=c(lfc_lower,lfc_upper),FDR=config$output_extras$FDR)
       sign_labels = unique(sign_hits$Label)
-      cat(sprintf("\tSELECTED HITS FOR PLOTS WITH LFC BETWEEN %s AND %s AT %s FDR:\t%s\n",lfc_lower, lfc_upper, config$plots$FDR, nrow(sign_hits)/length(sign_labels))) 
+      cat(sprintf("\tSELECTED HITS FOR PLOTS WITH LFC BETWEEN %s AND %s AT %s FDR:\t%s\n",lfc_lower, lfc_upper, config$output_extras$FDR, nrow(sign_hits)/length(sign_labels))) 
       
       ## plot heat map for all contrasts
       heat_labels = prettyPrintHeatmapLabels(uniprot_acs=sign_hits$Protein,uniprot_ids=sign_hits$name, gene_names=sign_hits$gene_name)
@@ -179,11 +179,14 @@ main <- function(opt){
     
     if(config$output_extras$volcano){
       ## make a volcano plat per contrast
-      for(l in sign_labels){
-        mss_results_sel = mss_out[mss_out$Label == l, ]
-        file_name = gsub('.txt',sprintf('-%s.pdf',l),config$files$output)
-        volcanoPlot(mss_results_sel, lfc_upper, lfc_lower, FDR=config$output_extras$FDR, file_name =file_name)
-      }  
+#       for(l in sign_labels){
+#         mss_results_sel = mss_out[mss_out$Label == l, ]
+#         file_name = gsub('.txt',sprintf('-%s.pdf',l),config$files$output)
+#         volcanoPlot(mss_results_sel, lfc_upper, lfc_lower, FDR=config$output_extras$FDR, file_name =file_name)
+#       }  
+
+      file_name = gsub('.txt','-volcano.pdf',config$files$output)
+      volcanoPlot(mss_out, lfc_upper, lfc_lower, FDR=config$output_extras$FDR, file_name=file_name)  
     }
   }
   
