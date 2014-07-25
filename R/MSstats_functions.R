@@ -184,7 +184,7 @@ volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='',
   
   min_x = -ceiling(max(abs(mss_results_sel$log2FC)))
   max_x = ceiling(max(abs(mss_results_sel$log2FC)))
-  min_pval = min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)
+  min_pval = min(mss_results_sel[mss_results_sel$bb > 0,]$adj.pvalue)
   mss_results_sel[mss_results_sel$adj.pvalue == 0,]$adj.pvalue = min_pval
   max_y = ceiling(-log2(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)))
   
@@ -200,6 +200,15 @@ volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='',
     xlim(min_x,max_x) + 
     ylim(0,max_y))
   if(PDF) dev.off()
+}
+
+prettyPrintHeatmapLabels = function(uniprot_acs, uniprot_ids, gene_names){
+  uniprot_ids_trunc = gsub('([A-Z,0-9]+)_([A-Z,0-9]+)','\\1',uniprot_ids)
+  longest_id = max(nchar(uniprot_ids_trunc))
+  tmp_frame = data.frame(t=uniprot_ids_trunc, s=longest_id-nchar(uniprot_ids_trunc)+1, g=gene_names,a=uniprot_acs, stringsAsFactors=F)
+  tmp_frame[is.na(tmp_frame$t),]$t=tmp_frame[is.na(tmp_frame$t),]$a
+  result = apply(tmp_frame, 1, function(x)paste0(x[1],paste(rep(' ',x[2]),collapse=''),x[3]))
+  return(result)
 }
 
 normalizeToReference = function(data_l_ref, ref_protein, PDF=T, output_file){

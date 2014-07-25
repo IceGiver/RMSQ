@@ -19,15 +19,10 @@ normalization :
 msstats :
   enabled : 1
   msstats_input :
-annotation :
-  enabled : 1
+output_extras :
   msstats_output : 
-  grouped : 1
-  species : MOUSE #HUMAN
-plots :
-  enabled : 1
-  msstats_output :
-  comparisons : 
+  biomart : 1
+  comparisons : all
   LFC : -Inf 2
   FDR : 0.05
   heatmap : 1 
