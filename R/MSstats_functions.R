@@ -180,26 +180,26 @@ peptideIntensityPerFile = function(ref_peptides, output_file, PDF=T){
   if(PDF) dev.off()
 }
 
-volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='', PDF=T){
+volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='', PDF=T, decimal_threshold=16){
   
   min_x = -ceiling(max(abs(mss_results_sel$log2FC)))
   max_x = ceiling(max(abs(mss_results_sel$log2FC)))
-  min_pval = min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)
-  #mss_results_sel[mss_results_sel$adj.pvalue == 0,]$adj.pvalue = min_pval
-  max_y = ceiling(-log2(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue)))
+  mss_results_sel[mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf,]$adj.pvalue = 10^-decimal_threshold
+  max_y = ceiling(-log10(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue))) + 1
   
-  # top
   
-  if(PDF) pdf(file_name, width=14, height=7*ceiling(length(unique(mss_results_sel$Label))/8))
-  p = ggplot(mss_results_sel, aes(x=log2FC,y=-log2(adj.pvalue)))
+  if(length(unique(mss_results_sel$Label))<= 2) fact = 1/length(unique(mss_results_sel$Label)) ; fact = ceiling(length(unique(mss_results_sel$Label))/4) 
+  
+  if(PDF) pdf(file_name, width=10, height=10*fact)
+  p = ggplot(mss_results_sel, aes(x=log2FC,y=-log10(adj.pvalue)))
   print(p + geom_point(colour='grey') + 
-    geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC>=lfc_upper,], aes(x=log2FC,y=-log2(adj.pvalue)), colour='red', size=2) +
-    geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC<=lfc_lower,], aes(x=log2FC,y=-log2(adj.pvalue)), colour='blue', size=2) +
+    geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC>=lfc_upper,], aes(x=log2FC,y=-log10(adj.pvalue)), colour='red', size=2) +
+    geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC<=lfc_lower,], aes(x=log2FC,y=-log10(adj.pvalue)), colour='blue', size=2) +
     geom_vline(xintercept=c(lfc_lower,lfc_upper), lty='dashed') + 
-    geom_hline(yintercept=-log2(FDR), lty='dashed') + 
+    geom_hline(yintercept=-log10(FDR), lty='dashed') + 
     xlim(min_x,max_x) + 
     ylim(0,max_y) + 
-    facet_wrap(facets = ~Label, ncol = 4, scales = 'fixed')) 
+    facet_wrap(facets = ~Label, ncol = 2, scales = 'fixed')) 
   if(PDF) dev.off()
 }
 
