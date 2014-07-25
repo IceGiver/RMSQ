@@ -175,18 +175,18 @@ main <- function(opt){
       ## plot heat map for all contrasts
       heat_labels = prettyPrintHeatmapLabels(uniprot_acs=sign_hits$Protein,uniprot_ids=sign_hits$name, gene_names=sign_hits$gene_name)
       heat_data_w = plotHeat(sign_hits, gsub('.txt','-sign.pdf',config$files$output), names=heat_labels, cluster_cols=config$output_extras$heatmap_cluster_cols)  
-      }
-      
-      if(config$output_extras$volcano){
-        ## make a volcano plat per contrast
-        for(l in sign_labels){
-          mss_results_sel = mss_out[mss_out$Label == l, ]
-          file_name = gsub('.txt',sprintf('-%s.pdf',l),config$files$output)
-          volcanoPlot(mss_results_sel, lfc_upper, lfc_lower, FDR=config$output_extras$FDR, file_name =file_name)
-        }  
-      }
     }
-  } 
+    
+    if(config$output_extras$volcano){
+      ## make a volcano plat per contrast
+      for(l in sign_labels){
+        mss_results_sel = mss_out[mss_out$Label == l, ]
+        file_name = gsub('.txt',sprintf('-%s.pdf',l),config$files$output)
+        volcanoPlot(mss_results_sel, lfc_upper, lfc_lower, FDR=config$output_extras$FDR, file_name =file_name)
+      }  
+    }
+  }
+  
 }
 
 if(!exists('DEBUG') || DEBUG==F){
