@@ -137,7 +137,8 @@ main <- function(opt){
       cat(sprintf("\tREADING PREPROCESSED\t%s\n",config$msstats$msstats_input)) 
       dmss = read.delim(config$msstats$msstats_input, stringsAsfactors=F)
     }
-    qData = dataProcess(dmss, normalization=F)    
+    qData = dataProcess(dmss, normalization=F)
+    cat(sprintf('\tFITTING CONTRASTS:\t%s\n',paste(rownames(contrasts),collapse=',')))
     results = groupComparison(contrast.matrix=contrasts, data=qData, labeled=F)$ComparisonResult  
     write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
     cat(sprintf(">> WRITTEN\t%s\n",config$files$output))

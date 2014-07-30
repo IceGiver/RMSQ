@@ -184,13 +184,21 @@ volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='',
   
   min_x = -ceiling(max(abs(mss_results_sel$log2FC)))
   max_x = ceiling(max(abs(mss_results_sel$log2FC)))
-  mss_results_sel[mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf,]$adj.pvalue = 10^-decimal_threshold
+  if(nrow(mss_results_sel[mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf,]) > 0) mss_results_sel[mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf,]$adj.pvalue = 10^-decimal_threshold
   max_y = ceiling(-log10(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue))) + 1
   
+  l = length(unique(mss_results_sel$Label))
+  w_base = 7
+  h_base = 7
   
-  if(length(unique(mss_results_sel$Label))<= 2) fact = 1/length(unique(mss_results_sel$Label)) ; fact = ceiling(length(unique(mss_results_sel$Label))/4) 
+  if(l<=2){
+    w=w_base*l 
+  }else{
+    w=w_base*2
+  }
+  h = h_base*ceiling(l/2)
   
-  if(PDF) pdf(file_name, width=10, height=10*fact)
+  if(PDF) pdf(file_name, width=w, height=h)
   p = ggplot(mss_results_sel, aes(x=log2FC,y=-log10(adj.pvalue)))
   print(p + geom_point(colour='grey') + 
     geom_point(data = mss_results_sel[mss_results_sel$adj.pvalue <= FDR & mss_results_sel$log2FC>=lfc_upper,], aes(x=log2FC,y=-log10(adj.pvalue)), colour='red', size=2) +
@@ -204,11 +212,13 @@ volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='',
 }
 
 prettyPrintHeatmapLabels = function(uniprot_acs, uniprot_ids, gene_names){
-  uniprot_ids_trunc = gsub('([A-Z,0-9]+)_([A-Z,0-9]+)','\\1',uniprot_ids)
-  longest_id = max(nchar(uniprot_ids_trunc))
-  tmp_frame = data.frame(t=uniprot_ids_trunc, s=longest_id-nchar(uniprot_ids_trunc)+1, g=gene_names,a=uniprot_acs, stringsAsFactors=F)
-  tmp_frame[is.na(tmp_frame$t),]$t=tmp_frame[is.na(tmp_frame$t),]$a
-  result = apply(tmp_frame, 1, function(x)paste0(x[1],paste(rep(' ',x[2]),collapse=''),x[3]))
+  #uniprot_ids_trunc = gsub('([A-Z,0-9]+)_([A-Z,0-9]+)','\\1',uniprot_ids)
+  #longest_id = max(nchar(uniprot_ids_trunc))
+  #tmp_frame = data.frame(t=uniprot_ids_trunc, s=longest_id-nchar(uniprot_ids_trunc)+1, g=gene_names,a=uniprot_acs, stringsAsFactors=F)
+  #tmp_frame[is.na(tmp_frame$t),]$t=tmp_frame[is.na(tmp_frame$t),]$a
+  #result = apply(tmp_frame, 1, function(x)paste0(x[1],paste(rep(' ',x[2]),collapse=''),x[3]))
+  #result = apply(tmp_frame, 1, function(x)paste0(x[4],' ',x[3],collapse=''))
+  result = paste(uniprot_acs,gene_names,sep=' ')
   return(result)
 }
 
