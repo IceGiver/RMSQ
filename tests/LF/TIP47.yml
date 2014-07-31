@@ -20,10 +20,11 @@ msstats :
   enabled : 1
   msstats_input :
 output_extras :
+  enabled : 1
   msstats_output : 
   biomart : 1
   comparisons : all # or any grep expression that returns a subset of the contrasts file
-  LFC : -Inf 2
+  LFC : -Inf 5
   FDR : 0.05
   heatmap : 1 
   heatmap_cluster_cols : 0
