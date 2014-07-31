@@ -20,6 +20,7 @@ msstats :
   enabled : 1
   msstats_input :
 output_extras :
+  enabled : 1
   msstats_output : 
   biomart : 1
   comparisons : all # or any grep expression in the contrasts file
