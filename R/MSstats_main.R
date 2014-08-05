@@ -132,7 +132,8 @@ main <- function(opt){
       if(!config$normalization$fill_missing) data_l = cleanMissingMaxQEntries(data_l)
       
       data_all = mergeMaxQDataWithKeys(data_l, keys, dataCol='Raw.file')
-      dmss = dataToMSSFormat(data_all)  
+      dmss = dataToMSSFormat(data_all)
+      write.table(dmss, file=gsub('.txt','-mss.txt',config$files$output), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
     }else{
       cat(sprintf("\tREADING PREPROCESSED\t%s\n",config$msstats$msstats_input)) 
       dmss = read.delim(config$msstats$msstats_input, stringsAsfactors=F)
