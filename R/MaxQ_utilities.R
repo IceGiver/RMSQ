@@ -8,7 +8,7 @@ suppressMessages(library(getopt))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -46,7 +46,7 @@ MQutil.SILACToLong = function(filename, output){
   library(reshape2)
   file = Sys.glob(filename)
   cat(sprintf('\tPROCESSING:\n\t%s\n',paste(file,collapse='\n\t')))
-  tmp = data.table(read.delim(file, stringsAsFactors=F))
+  tmp = fread(file, stringsAsFactors=F)
   tmp_long = melt(tmp, measure.vars = c('Intensity.L','Intensity.H'))
   tmp_long[,Intensity:=NULL]
   setnames(tmp_long,'value','Intensity')
@@ -65,7 +65,7 @@ MQutil.concat = function(filenames, output){
   unique_files = c()
   
   for(file in files){
-    tmp = data.table(read.delim(file, stringsAsFactors=F))
+    tmp = fread(file, stringsAsFactors=F)
     if(is.null(colnames(res)) || colnames(tmp) == colnames(res)){
       unique_files_current = unique(tmp$Raw.file)
       if(!is.null(intersect(unique_files_current,unique_files)) && length(intersect(unique_files_current,unique_files))>0) cat(sprintf('\tWARNING DUPLICATE RAW FILE ENTRIES IN FILE %s:\t%s\n',file, paste(intersect(unique_files_current, unique_files),collapse=',')))
@@ -82,6 +82,16 @@ MQutil.concat = function(filenames, output){
   cat(sprintf('\tWRITTEN\t%s\n',gsub('.txt','-keys.txt',output)))
 }
 
+MQutil.getKeys = function(filename, output){
+  library(data.table)
+  file = Sys.glob(filename)
+  cat(sprintf('\tPROCESSING:\n\t%s\n',paste(file,collapse='\n\t')))
+  #tmp = data.table(read.delim(file, stringsAsFactors=F))
+  tmp = fread(file, stringsAsFactors=F)
+  write.table(unique(tmp$Raw.file),file=output, eol='\n', sep='\t', quote=F, row.names=F, col.names=F)
+  cat(sprintf('\tWRITTEN\t%s\n',output))
+}
+
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
@@ -90,6 +100,8 @@ main <- function(opt){
       MQutil.concat(opt$files, opt$output)
     }else if(opt$command == 'convert-silac'){
       MQutil.SILACToLong(filename = opt$files, output = opt$output)
+    }else if(opt$command == 'keys'){
+      MQutil.getKeys(filename = opt$files, output = opt$output)
     }  
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
