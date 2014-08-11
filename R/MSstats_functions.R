@@ -35,28 +35,30 @@ removeMaxQProteinGroups = function(data){
 }
 
 castMaxQToWide = function(d_long, aggregateFun=sum){
-  data_w = dcast( Proteins + Sequence + Charge ~ Raw.file, data=d_long, value.var='Intensity', fun.aggregate=aggregateFun)
+  data_w = dcast.data.table( Proteins + Sequence + Charge ~ Raw.file, data=d_long, value.var='Intensity', fun.aggregate=aggregateFun, fill = NA)
   return(data_w)
 }
 
 castMaxQToWidePTM = function(d_long, aggregateFun=sum){
-  data_w = dcast( Proteins + Modified.sequence + Charge ~ Raw.file, data=d_long, value.var='Intensity', fun.aggregate=aggregateFun)
+  data_w = dcast.data.table( Proteins + Modified.sequence + Charge ~ Raw.file, data=d_long, value.var='Intensity', fun.aggregate=aggregateFun, fill=NA)
   setnames(data_w,2,'Sequence')
   return(data_w)
 }
 
-meltMaxQToLong = function(d_wide){
-  data_l = melt(d_wide, id.vars=c('Proteins','Sequence','Charge'))
+meltMaxQToLong = function(data_w){
+  data_l = reshape2::melt(data_w, id.vars=c('Proteins','Sequence','Charge'))
   setnames(data_l,old=4:5,new=c('Raw.file','Intensity'))
   return(data_l)
 }
 
-fillMissingMaxQEntries = function(data_w){
-  mins = apply(data_w[,4:ncol(data_w)],2, function(x) min(x[x>0],na.rm=T))
-  for(col in 4:ncol(data_w)){
-    data_w[is.na(data_w[,col]),col]=0
-    data_w[as.numeric(data_w[,col])==0,col]=mins[col-3]
-  } 
+fillMissingMaxQEntries = function(data_w, perRun=F){
+  mins = apply(data_w[,4:ncol(data_w),with=F],2, function(x) min(x[x>0],na.rm=T))
+  for (j in (4:ncol(data_w)))
+    if(perRun){
+      set(data_w,which(is.na(data_w[[j]])),j,mins[j-3])  
+    }else{
+      set(data_w,which(is.na(data_w[[j]])),j,min(mins))
+    }
   return(data_w)
 }
 
@@ -100,9 +102,31 @@ normalizePerCondition = function(d, NORMALIZATION_METHOD="scale"){
   d_tmp
 }
 
+na.replace = function(v,value=0) { 
+  v[is.na(v)] = value
+  return(v) 
+}
+
+myNormalizeMedianValues = function (x) {
+  narrays <- NCOL(x)
+  if (narrays == 1) 
+    return(x)
+  cmed <- log(apply(x, 2, median, na.rm = TRUE))
+  cmed <- exp(cmed - mean(cmed, na.rm=T))
+  t(t(x)/cmed)
+}
+
 normalizeSingle = function(data_w, NORMALIZATION_METHOD="scale"){
-  data_w_n = data.table(data_w[,1:3],normalizeBetweenArrays(as.matrix(data_w[,4:ncol(data_w)]), method=NORMALIZATION_METHOD))  
-  data_w_n
+  
+  data_part = as.matrix(data_w[,4:ncol(data_w),with=F])
+  if(NORMALIZATION_METHOD=='scale'){
+    res = myNormalizeMedianValues(data_part)
+  }else if(NORMALIZATION_METHOD=='quantile'){
+    res = normalizeBetweenArrays(data_part, method=NORMALIZATION_METHOD)
+  }
+  data_part_n = normalizeBetweenArrays(data_part, method=NORMALIZATION_METHOD)
+  res_f = data.table(cbind(data_w[,1:3,with=F],res))
+  return(res_f)
 }
 
 dataToMSSFormat = function(d){
@@ -159,7 +183,6 @@ logScale = function(data, format='wide', base=2){
 
 ###################################
 ## doesnt work so far with new code
-
 
 peptideDistribution = function(data_l, output_file, PDF=T){
   ## look at peptide distribution of all proteins

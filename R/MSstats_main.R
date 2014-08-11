@@ -47,9 +47,10 @@ main <- function(opt){
   
   if(config$data$enabled){
     cat(">> LOADING DATA\n")
-    data = data.table(read.delim(config$files$data, stringsAsFactors=F))
-    keys = read.delim(config$files$keys, stringsAsFactors=F)
-    contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))  
+    data = fread(config$files$data, stringsAsFactors=F)
+    setnames(data, colnames(data),gsub('\\s','.',colnames(data)))
+    keys = fread(config$files$keys, stringsAsFactors=F)
+    contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
   }
   
   ## FILTERING
@@ -100,6 +101,13 @@ main <- function(opt){
     }
     
     ## normalization
+    
+    ## for missing values fill in we assume data is in wide format
+    if(config$normalization$fill_missing){
+      cat("\tMISSING VALUES\tFILL\n")
+      data_w = fillMissingMaxQEntries(data_w)
+    }
+    
     if(grepl('scale|quantile|cyclicloess',config$normalization$method)){
       cat(sprintf("\tNORMALIZATION\t%s\n",config$normalization$method))
       data_fn = normalizeSingle(data_w=data_w, NORMALIZATION_METHOD=config$normalization$method)  
@@ -114,12 +122,6 @@ main <- function(opt){
     }else{
       data_fn = data_w
     }
-    ## herafter we assume data_fn is in wide format
-    
-    if(config$normalization$fill_missing){
-      cat("\tMISSING VALUES\tFILL\n")
-      data_fn = fillMissingMaxQEntries(data_w)
-    }
   }
   
   ## MSSTATS
@@ -127,10 +129,6 @@ main <- function(opt){
     cat(">> MSSTATS\n")
     if(is.null(config$msstats$msstats_input)){
       data_l = meltMaxQToLong(data_fn)
-      
-      ## if missing entries were not filled we need to remove the 0, Inf and NaN values to replace them with NA
-      if(!config$normalization$fill_missing) data_l = cleanMissingMaxQEntries(data_l)
-      
       data_all = mergeMaxQDataWithKeys(data_l, keys, dataCol='Raw.file')
       dmss = dataToMSSFormat(data_all)
       write.table(dmss, file=gsub('.txt','-mss.txt',config$files$output), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
@@ -139,6 +137,10 @@ main <- function(opt){
       dmss = read.delim(config$msstats$msstats_input, stringsAsfactors=F)
     }
     qData = dataProcess(dmss, normalization=F)
+    if(!all(levels(qData$GROUP_ORIGINAL) == colnames(contrasts))){
+      cat(sprintf('\tERROR IN CONTRAST COMPARISON: GROUP LEVELS DIFFERENT FROM CONTRASTS FILE\n\tGROUP LEVELS\t%s\n\tCONTRASTS FILE\t%s\n',paste(levels(qData$GROUP_ORIGINAL),collapse=','),paste(colnames(contrasts),collapse=',')))
+      quit()
+    } 
     cat(sprintf('\tFITTING CONTRASTS:\t%s\n',paste(rownames(contrasts),collapse=',')))
     results = groupComparison(contrast.matrix=contrasts, data=qData, labeled=F)$ComparisonResult  
     write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
@@ -187,11 +189,13 @@ main <- function(opt){
       volcanoPlot(mss_out[grep(selected_labels,mss_out$Label),], lfc_upper, lfc_lower, FDR=config$output_extras$FDR, file_name=file_name)  
     }
   }
-  
 }
 
 if(!exists('DEBUG') || DEBUG==F){
-  opt = c(opt, config='tests/MSstats_main_test.yml')
+  #opt = c(opt, config='tests/MSstats_main_test.yml')
+  opt = c(opt, config='tests/LF/TIP47_nomissing_values.yml')
+  main(opt)
+  opt = c(opt, config='tests/LF/TIP47.yml')
   main(opt)
 }else{
   main(opt)
