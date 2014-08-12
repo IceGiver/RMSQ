@@ -127,6 +127,12 @@ main <- function(opt){
   ## MSSTATS
   if(config$msstats$enabled){
     cat(">> MSSTATS\n")
+    if(is.null(config$msstats$version) || config$msstats$version == 'stable'){
+      suppressMessages(library(MSstats))  
+    }else{
+      suppressMessages(library(MSstats.daily))  
+    }
+    
     if(is.null(config$msstats$msstats_input)){
       data_l = meltMaxQToLong(data_fn)
       data_all = mergeMaxQDataWithKeys(data_l, keys, dataCol='Raw.file')
@@ -195,7 +201,7 @@ if(!exists('DEBUG') || DEBUG==F){
   #opt = c(opt, config='tests/MSstats_main_test.yml')
   opt = c(opt, config='tests/LF/TIP47_nomissing_values.yml')
   main(opt)
-  opt = c(opt, config='tests/LF/TIP47.yml')
+  opt$config = '~/Projects/HPCKrogan/Data/Treg-Teff-PTMs/summary/20140811-2/TR-TF-higgs.yml'
   main(opt)
 }else{
   main(opt)
