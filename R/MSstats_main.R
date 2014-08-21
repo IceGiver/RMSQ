@@ -134,8 +134,10 @@ main <- function(opt){
   if(config$msstats$enabled){
     cat(">> MSSTATS\n")
     if(is.null(config$msstats$version) || config$msstats$version == 'stable'){
+      cat('\tLOADING MSSTATS STABLE VERSION')
       suppressMessages(library(MSstats))  
     }else{
+	  cat('\tLOADING MSSTATS DAILY VERSION')
       suppressMessages(library(MSstats.daily))  
     }
     
@@ -204,10 +206,7 @@ main <- function(opt){
 }
 
 if(!exists('DEBUG') || DEBUG==F){
-  #opt = c(opt, config='tests/MSstats_main_test.yml')
-  opt = c(opt, config='tests/LF/TIP47_nomissing_values.yml')
-  main(opt)
-  opt$config = '~/Projects/HPCKrogan/Data/Treg-Teff-PTMs/summary/20140811-2/TR-TF-higgs.yml'
+  opt = c(opt, config='tests/MSstats_main_test.yml')
   main(opt)
 }else{
   main(opt)
