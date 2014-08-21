@@ -69,7 +69,13 @@ main <- function(opt){
     if(config$filters$contaminants){
       cat("\tCONTAMINANTS\tREMOVE\n")
       data_f = filterMaxqData(data_f)  
-    } 
+    }
+    if(!is.null(config$filters$modification)){
+      cat(sprintf("\tMODIFICATIONS\t%s\n",config$filters$modification))
+      if(config$filters$modification == 'UB'){
+        data_f = data_f[Modifications %like% 'GlyGly']
+      }
+    }
   }else{
     data_f = data
   }
