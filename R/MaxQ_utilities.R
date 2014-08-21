@@ -66,20 +66,17 @@ MQutil.concat = function(filenames, output){
   
   for(file in files){
     tmp = fread(file, stringsAsFactors=F)
-    if(is.null(colnames(res)) || colnames(tmp) == colnames(res)){
-      unique_files_current = unique(tmp$Raw.file)
-      if(!is.null(intersect(unique_files_current,unique_files)) && length(intersect(unique_files_current,unique_files))>0) cat(sprintf('\tWARNING DUPLICATE RAW FILE ENTRIES IN FILE %s:\t%s\n',file, paste(intersect(unique_files_current, unique_files),collapse=',')))
-      res = rbind(res, tmp)
-      unique_files = c(unique_files, unique_files_current)
-    }else{
-      cat('\tWRONG FILE SCHEMA\t EXITING...\n')
-      quit()
-    }  
+    
+    unique_files_current = unique(tmp[['Raw file']])
+    if(!is.null(intersect(unique_files_current,unique_files)) && length(intersect(unique_files_current,unique_files))>0) cat(sprintf('\tWARNING DUPLICATE RAW FILE ENTRIES IN FILE %s:\t%s\n',file, paste(intersect(unique_files_current, unique_files),collapse=',')))
+    res = rbind(res, tmp)
+    unique_files = c(unique_files, unique_files_current)  
   }
+  cat(sprintf('\tWRITING\t%s\n',output))
   write.table(res, file=output, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
-  cat(sprintf('\tWRITTEN\t%s\n',output))
+  cat(sprintf('\tWRITING\t%s\n',gsub('.txt','-keys.txt',output)))
+  #print(unique_files)
   write.table(unique_files, file=gsub('.txt','-keys.txt',output), eol='\n', sep='\t', quote=F, row.names=F, col.names=F)
-  cat(sprintf('\tWRITTEN\t%s\n',gsub('.txt','-keys.txt',output)))
 }
 
 MQutil.getKeys = function(filename, output){
