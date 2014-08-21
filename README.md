@@ -58,6 +58,8 @@ filters:
 
   protein_groups : remove/explode/ignore. Whether composite protein groups need to be filtered out (remove) or ignored. Currently explode is not implemented.
 
+  modifications: filter out modified peptides only for transitions. 'UB' filters out GlyGly from the Modifications column
+
 normalization :
   
   enabled : 0/1. Enables this block

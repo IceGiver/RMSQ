@@ -10,6 +10,7 @@ filters:
   enabled : 1
   contaminants : 1
   protein_groups : remove #remove, explode, ignore
+  modifications : #UB or empty
 normalization :
   enabled : 1
   method : quantile # quantile, none, scale, reference
