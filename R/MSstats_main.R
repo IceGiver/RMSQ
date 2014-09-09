@@ -80,18 +80,18 @@ main <- function(opt){
     data_f = data
   }
   
+  ## formatting
+  if(config$files$sequence_type == 'modified'){
+    data_w = castMaxQToWidePTM(data_f)  
+  }else if(config$files$sequence_type == 'unmodified'){
+    data_w = castMaxQToWide(data_f)  
+  }
+  data_l = meltMaxQToLong(data_w)
+  
   ## NORMALIZATION
   if(config$normalization$enabled){
     cat(">> NORMALIZING\n")
-    
-    ## formatting
-    if(config$files$sequence_type == 'modified'){
-      data_w = castMaxQToWidePTM(data_f)  
-    }else if(config$files$sequence_type == 'unmodified'){
-      data_w = castMaxQToWide(data_f)  
-    }
-    data_l = meltMaxQToLong(data_w)
-    
+      
     ## flattening tech repeats per biological replicate
     if(config$normalization$aggregate_tr){
       cat("\tAGGREGATING TECHNICAL REPEATS\n")
@@ -128,16 +128,18 @@ main <- function(opt){
     }else{
       data_fn = data_w
     }
+  }else{
+    data_fn = data_w
   }
   
   ## MSSTATS
   if(config$msstats$enabled){
     cat(">> MSSTATS\n")
     if(is.null(config$msstats$version) || config$msstats$version == 'stable'){
-      cat('\tLOADING MSSTATS STABLE VERSION')
+      cat('\tLOADING MSSTATS STABLE VERSION\n')
       suppressMessages(library(MSstats))  
     }else{
-	  cat('\tLOADING MSSTATS DAILY VERSION')
+	  cat('\tLOADING MSSTATS DAILY VERSION\n')
       suppressMessages(library(MSstats.daily))  
     }
     
