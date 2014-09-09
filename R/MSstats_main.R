@@ -211,3 +211,5 @@ if(!exists('DEBUG') || DEBUG==F){
 }else{
   main(opt)
 } 
+
+opt = c(opt, config='~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/RMSQ_template.yml')
