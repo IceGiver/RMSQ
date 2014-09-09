@@ -47,7 +47,7 @@ MQutil.SILACToLong = function(filename, output){
   file = Sys.glob(filename)
   cat(sprintf('\tPROCESSING:\n\t%s\n',paste(file,collapse='\n\t')))
   tmp = fread(file, stringsAsFactors=F)
-  tmp_long = melt(tmp, measure.vars = c('Intensity.L','Intensity.H'))
+  tmp_long = melt(tmp, measure.vars = c('Intensity L','Intensity H'))
   tmp_long[,Intensity:=NULL]
   setnames(tmp_long,'value','Intensity')
   setnames(tmp_long,'variable','IsotopeLabelType')
@@ -106,4 +106,7 @@ main <- function(opt){
   }
 }
 
+# opt$command = 'convert-silac'
+# opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Jurkat-Infection-PTM/Mock-v-WT-Ub/input/042613-dc-1-2-evidence.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Jurkat-Infection-PTM/Mock-v-WT-Ub/input/042613-dc-1-2-evidence-long.txt'
 main(opt)
