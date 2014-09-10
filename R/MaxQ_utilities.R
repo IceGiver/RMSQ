@@ -1,5 +1,7 @@
 #! /usr/bin/Rscript --vanilla
 
+require(bit64)
+
 ###############################
 ## FILE AND LIB LOADING #######
 
@@ -47,12 +49,12 @@ MQutil.SILACToLong = function(filename, output){
   file = Sys.glob(filename)
   cat(sprintf('\tPROCESSING:\n\t%s\n',paste(file,collapse='\n\t')))
   tmp = fread(file, stringsAsFactors=F)
-  tmp_long = melt(tmp, measure.vars = c('Intensity L','Intensity H'))
+  tmp_long = reshape2::melt(tmp, measure.vars = c('Intensity L','Intensity H'))
   tmp_long[,Intensity:=NULL]
   setnames(tmp_long,'value','Intensity')
   setnames(tmp_long,'variable','IsotopeLabelType')
+  setnames(tmp_long,'Raw file','Raw.file')
   levels(tmp_long$IsotopeLabelType) = c('L','H')
-  tmp_long[, Raw.file:=paste(as.character(tmp_long$Raw.file), as.character(tmp_long$IsotopeLabelType), sep='-')]
   write.table(tmp_long, file=output, sep='\t', quote=F, row.names=F, col.names=T)
 }
 
@@ -107,6 +109,6 @@ main <- function(opt){
 }
 
 # opt$command = 'convert-silac'
-# opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Jurkat-Infection-PTM/Mock-v-WT-Ub/input/042613-dc-1-2-evidence.txt'
-# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Jurkat-Infection-PTM/Mock-v-WT-Ub/input/042613-dc-1-2-evidence-long.txt'
+# opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
 main(opt)
