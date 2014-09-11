@@ -93,12 +93,13 @@ flattenMaxQTechRepeats = function(data_l){
 }
 
 flattenKeysTechRepeats = function(keys){
-  return(aggregate(. ~ BioReplicate, data=keys, FUN=function(x) unique(x)[1]))
+  keys_agg = aggregate(. ~ BioReplicate, data=keys, FUN=function(x) unique(x)[1])
+  keys_agg$Run = keys_agg$BioReplicate
+  return(keys_agg)
 }
 
-mergeMaxQDataWithKeys = function(data_l, keys, dataCol='Raw.file'){
-  setnames(data_l, dataCol, 'RawFile')
-  unique_data = unique(data_l$RawFile)
+mergeMaxQDataWithKeys = function(data, keys, by=c('RawFile')){
+  unique_data = unique(data$RawFile)
   unique_keys = unique(keys$RawFile)
   keys_not_found = setdiff(unique_keys, unique_data)
   data_not_found = setdiff(unique_data, unique_keys)
@@ -106,9 +107,8 @@ mergeMaxQDataWithKeys = function(data_l, keys, dataCol='Raw.file'){
   cat(sprintf("data found: %s \t data not in keys file:\n%s\n", length(unique_data)-length(data_not_found), paste(data_not_found, collapse='\t')))
   
   ## select only required attributes from MQ format
-  setnames
-  data_l = merge(data_l, keys, by=c('RawFile','IsotopeLabelType'))
-  data_l
+  data = merge(data, keys, by=by)
+  return(data)
 }
 
 normalizePerCondition = function(d, NORMALIZATION_METHOD="scale"){

@@ -126,10 +126,12 @@ runMSstats = function(dmss, contrasts, config){
 convertDataLongToMss = function(data_w, keys, config){
   cat(">> CONVERTING DATA TO MSSTATS FORMAT\n")
   data_l = meltMaxQToLong(data_w, na.rm = F)
-  data_lk = mergeMaxQDataWithKeys(data_l, keys, dataCol='RawFile')
+  data_lk = mergeMaxQDataWithKeys(data_l, keys, by=c('RawFile','IsotopeLabelType'))
   dmss = dataToMSSFormat(data_lk)
   ## sanity check for zero's
-  dmss[!is.na(dmss$Intensity) & dmss$Intensity == 0,]$Intensity = NA
+  if(nrow(dmss[!is.na(dmss$Intensity) & dmss$Intensity == 0,]) > 0){
+    dmss[!is.na(dmss$Intensity) & dmss$Intensity == 0,]$Intensity = NA
+  } 
   write.table(dmss, file=gsub('.txt','-mss.txt',config$files$data), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
   return(dmss)  
 }
@@ -181,7 +183,7 @@ main <- function(opt){
   if(config$data$enabled){
     cat(">> LOADING DATA\n")
     data = fread(config$files$data, stringsAsFactors=F)
-    #setnames(data, colnames(data),gsub('\\s','.',colnames(data)))
+    setnames(data, colnames(data),gsub('\\s','.',colnames(data)))
     keys = fread(config$files$keys, stringsAsFactors=F)
     contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
     
@@ -189,9 +191,11 @@ main <- function(opt){
     ## currently we leave this in because the MSstats discinction on labeltype doesn't work 
     ## see ISSUES https://github.com/everschueren/RMSQ/issues/1
   
-    setnames(data, 'Raw.file', 'RawFile')
+    tryCatch(setnames(data, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found, trying Raw file\n'))
+    tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw file not found'))
+    
     cat('\tVERIFYING DATA AND KEYS\n')
-    data = mergeMaxQDataWithKeys(data, keys, dataCol='RawFile')
+    data = mergeMaxQDataWithKeys(data, keys)
     data$RawFile = paste(data$RawFile, data$IsotopeLabelType, sep='_')
     keys$RawFile = paste(keys$RawFile, keys$IsotopeLabelType, sep='_')
     data$IsotopeLabelType = 'L'
@@ -236,5 +240,6 @@ main <- function(opt){
 }
 
 #opt = c(opt, config='~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/RMSQ_template.yml')
+opt = c(opt, config='~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/ub-LF/MKL-1-22.yml')
 
 main(opt)
