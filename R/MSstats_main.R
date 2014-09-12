@@ -61,6 +61,8 @@ filterData = function(data, config){
     cat(sprintf("\tMODIFICATIONS\t%s\n",config$filters$modification))
     if(config$filters$modification == 'UB'){
       data_f = data_f[Modifications %like% 'GlyGly']
+    }else if(config$filters$modification == 'PH'){
+      data_f = data_f[Modifications %like% 'Phospho']
     }
   }
   return(data_f)
