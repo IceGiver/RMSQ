@@ -187,17 +187,16 @@ main <- function(opt){
     data = fread(config$files$data, stringsAsFactors=F)
     setnames(data, colnames(data),gsub('\\s','.',colnames(data)))
     keys = fread(config$files$keys, stringsAsFactors=F)
-    contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
     
     ## the following lines were added to integrate the Label with the Filename when using multiple labels (e.g. H/L)
     ## currently we leave this in because the MSstats discinction on labeltype doesn't work 
     ## see ISSUES https://github.com/everschueren/RMSQ/issues/1
   
     tryCatch(setnames(data, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found, trying Raw file\n'))
-    tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw file not found'))
+    #tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw file not found'))
     
     cat('\tVERIFYING DATA AND KEYS\n')
-    data = mergeMaxQDataWithKeys(data, keys)
+    data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
     data$RawFile = paste(data$RawFile, data$IsotopeLabelType, sep='_')
     keys$RawFile = paste(keys$RawFile, keys$IsotopeLabelType, sep='_')
     data$IsotopeLabelType = 'L'
@@ -209,7 +208,7 @@ main <- function(opt){
   
   ## FORMATTING IN WIDE FORMAT FOR NORMALIZATION PURPOSES
   if(config$files$sequence_type == 'modified') castFun = castMaxQToWidePTM else castFun = castMaxQToWide
-  data_w = castFun(data_f)  
+  if(config$data$enabled) data_w = castFun(data_f)
   
   ## AGGREGATION
   if(config$aggregation$enabled){
@@ -223,14 +222,16 @@ main <- function(opt){
 
   ## MSSTATS
   if(config$msstats$enabled){
+    cat(config$msstats$msstats_input)
     if(is.null(config$msstats$msstats_input)){
       dmss = convertDataLongToMss(data_w, keys, config)
     }else{
       cat(sprintf("\tREADING PREPROCESSED\t%s\n", config$msstats$msstats_input)) 
-      dmss = read.delim(config$msstats$msstats_input, stringsAsFactors=F)
+      dmss = fread(config$msstats$msstats_input, stringsAsFactors=F)
     }
     cat(sprintf('>>LOADING MSSTATS %s VERSION\n', config$msstats$version))
     if(!is.null(config$msstats$version) & config$msstats$version == 'MSstats.daily') library(config$msstats$version, character.only = T) else library(MSstats)
+    contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
     results = runMSstats(dmss, contrasts, config)
   }
   
@@ -241,7 +242,9 @@ main <- function(opt){
   }
 }
 
-#opt = c(opt, config='~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/RMSQ_template.yml')
-opt = c(opt, config='~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/ub-LF/MKL-1-22.yml')
+#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/abundance/RMSQ_template.yml')
+#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/ub-LF/MKL-1-22.yml')
+#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/phospho-rad53/Rad53.yml')
+#opt = c(opt, config='~/Projects/HPCKrogan/Data/Mtb/UB/TBLMSE-UB.yml')
 
 main(opt)
