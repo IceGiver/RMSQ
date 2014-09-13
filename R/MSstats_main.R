@@ -191,7 +191,7 @@ main <- function(opt){
     ## the following lines were added to integrate the Label with the Filename when using multiple labels (e.g. H/L)
     ## currently we leave this in because the MSstats discinction on labeltype doesn't work 
     ## see ISSUES https://github.com/everschueren/RMSQ/issues/1
-  
+    
     tryCatch(setnames(data, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found, trying Raw file\n'))
     #tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw file not found'))
     
@@ -201,28 +201,27 @@ main <- function(opt){
     keys$RawFile = paste(keys$RawFile, keys$IsotopeLabelType, sep='_')
     data$IsotopeLabelType = 'L'
     keys$IsotopeLabelType = 'L'
+    
+    ## FILTERING
+    if(config$filters$enabled) data_f = filterData(data, config) else data_f=data
+    
+    ## FORMATTING IN WIDE FORMAT FOR NORMALIZATION PURPOSES
+    if(config$files$sequence_type == 'modified') castFun = castMaxQToWidePTM else castFun = castMaxQToWide
+    data_w = castFun(data_f)
+    
+    ## AGGREGATION
+    if(config$aggregation$enabled){
+      res = aggregateData(data_w, keys, config, castFun)
+      data_w=res$data_w_agg
+      keys=res$keys_agg
+    } 
+    
+    ## NORMALIZATION
+    if(config$normalization$enabled) data_fn = normalizeData(data_w, config) else data_fn=data_w
   }
   
-  ## FILTERING
-  if(config$filters$enabled) data_f = filterData(data, config) else data_f=data
-  
-  ## FORMATTING IN WIDE FORMAT FOR NORMALIZATION PURPOSES
-  if(config$files$sequence_type == 'modified') castFun = castMaxQToWidePTM else castFun = castMaxQToWide
-  if(config$data$enabled) data_w = castFun(data_f)
-  
-  ## AGGREGATION
-  if(config$aggregation$enabled){
-    res = aggregateData(data_w, keys, config, castFun)
-    data_w=res$data_w_agg
-    keys=res$keys_agg
-  } 
-  
-  ## NORMALIZATION
-  if(config$normalization$enabled) data_fn = normalizeData(data_w, config) else data_fn=data_w
-
   ## MSSTATS
   if(config$msstats$enabled){
-    cat(config$msstats$msstats_input)
     if(is.null(config$msstats$msstats_input)){
       dmss = convertDataLongToMss(data_w, keys, config)
     }else{
