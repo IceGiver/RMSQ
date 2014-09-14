@@ -201,6 +201,9 @@ main <- function(opt){
     keys$RawFile = paste(keys$RawFile, keys$IsotopeLabelType, sep='_')
     data$IsotopeLabelType = 'L'
     keys$IsotopeLabelType = 'L'
+    data[Intensity<1,]$Intensity=NA ## fix for weird converted values from fread
+    
+    ## end bug fixes
     
     ## FILTERING
     if(config$filters$enabled) data_f = filterData(data, config) else data_f=data
