@@ -1,6 +1,7 @@
 #! /usr/bin/Rscript --vanilla
 
 require(bit64)
+library(Rmpfr)
 
 ###############################
 ## FILE AND LIB LOADING #######
@@ -48,13 +49,14 @@ MQutil.SILACToLong = function(filename, output){
   library(reshape2)
   file = Sys.glob(filename)
   cat(sprintf('\tPROCESSING:\n\t%s\n',paste(file,collapse='\n\t')))
-  tmp = fread(file, stringsAsFactors=F)
+  tmp = fread(file)
   tmp_long = reshape2::melt(tmp, measure.vars = c('Intensity L','Intensity H'))
   tmp_long[,Intensity:=NULL]
   setnames(tmp_long,'value','Intensity')
   setnames(tmp_long,'variable','IsotopeLabelType')
   setnames(tmp_long,'Raw file','Raw.file')
   levels(tmp_long$IsotopeLabelType) = c('L','H')
+  tmp_long[!is.na(tmp_long$Intensity) && tmp_long$Intensity<1,]$Intensity=NA
   write.table(tmp_long, file=output, sep='\t', quote=F, row.names=F, col.names=T)
 }
 
@@ -67,13 +69,17 @@ MQutil.concat = function(filenames, output){
   unique_files = c()
   
   for(file in files){
-    tmp = fread(file, stringsAsFactors=F)
+    tmp = fread(file, stringsAsFactors=F, colClasses = c(Intensity='character'))
+    tmp$Intensity = as.numeric(tmp$Intensity)
+    #tmp$Intensity L = as.numeric(tmp[,'Intensity L',with=F])
     
     unique_files_current = unique(tmp[['Raw file']])
     if(!is.null(intersect(unique_files_current,unique_files)) && length(intersect(unique_files_current,unique_files))>0) cat(sprintf('\tWARNING DUPLICATE RAW FILE ENTRIES IN FILE %s:\t%s\n',file, paste(intersect(unique_files_current, unique_files),collapse=',')))
     res = rbind(res, tmp)
     unique_files = c(unique_files, unique_files_current)  
   }
+  select_colnames = grep('Raw file|Intensity|Proteins|Modifications|Sequence|Modified sequence|Charge',colnames(res))
+  res = res[,select_colnames,with=F]
   cat(sprintf('\tWRITING\t%s\n',output))
   write.table(res, file=output, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
   cat(sprintf('\tWRITING\t%s\n',gsub('.txt','-keys.txt',output)))
@@ -111,4 +117,9 @@ main <- function(opt){
 # opt$command = 'convert-silac'
 # opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
+
+opt$command = 'concat'
+opt$files = '~/Projects/HPCKrogan/Data/Mtb/Files/073113*evidence.txt'
+opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
+
 main(opt)
