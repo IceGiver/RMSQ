@@ -78,7 +78,7 @@ MQutil.concat = function(filenames, output){
     res = rbind(res, tmp)
     unique_files = c(unique_files, unique_files_current)  
   }
-  select_colnames = grep('Raw file|Intensity|Proteins|Modifications|Sequence|Modified sequence|Charge',colnames(res))
+  select_colnames = grep('Raw\ file|Intensity|Proteins|Modifications|Sequence|Modified\ sequence|Charge|Protein\ group\ IDs|id|Retention\ time|Reverse|Contaminant',colnames(res), ignore.case = F)
   res = res[,select_colnames,with=F]
   cat(sprintf('\tWRITING\t%s\n',output))
   write.table(res, file=output, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
@@ -118,8 +118,8 @@ main <- function(opt){
 # opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
 
-opt$command = 'concat'
-opt$files = '~/Projects/HPCKrogan/Data/Mtb/Files/073113*evidence.txt'
-opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
+# opt$command = 'concat'
+# opt$files = '~/Projects/HPCKrogan/Data/Mtb/Files/073113*evidence.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
 
 main(opt)
