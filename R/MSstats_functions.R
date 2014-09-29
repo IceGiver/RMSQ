@@ -156,10 +156,20 @@ dataToMSSFormat = function(d){
   tmp
 }
 
-plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein', cluster_cols=F){
+plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein', cluster_cols=F, display='log2FC'){
   heat_data = data.frame(mss_F, names=names)
   #heat_data = mss_F[,c('uniprot_id','Label','log2FC')]
-  heat_data_w = dcast(names ~ Label, data=heat_data, value.var='log2FC')
+  
+  ## good
+  if(display=='log2FC'){
+    heat_data_w = dcast(names ~ Label, data=heat_data, value.var='log2FC')  
+  }else if(display=='pvalue'){
+    heat_data$adj.pvalue = -log10(heat_data$adj.pvalue+10^-16)  
+    heat_data_w = dcast(names ~ Label, data=heat_data, value.var='adj.pvalue')  
+  }
+  
+  ## try
+  
   #gene_names = uniprot_to_gene_replace(uniprot_ac=heat_data_w$Protein)
   rownames(heat_data_w) = heat_data_w$names
   heat_data_w = heat_data_w[,-1]
@@ -227,10 +237,10 @@ peptideIntensityPerFile = function(ref_peptides, output_file, PDF=T){
 
 volcanoPlot = function(mss_results_sel, lfc_upper, lfc_lower, FDR, file_name='', PDF=T, decimal_threshold=16){
   
-  min_x = -ceiling(max(abs(mss_results_sel$log2FC)))
-  max_x = ceiling(max(abs(mss_results_sel$log2FC)))
-  if(nrow(mss_results_sel[mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf,]) > 0) mss_results_sel[mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf,]$adj.pvalue = 10^-decimal_threshold
-  max_y = ceiling(-log10(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue))) + 1
+  min_x = -ceiling(max(abs(mss_results_sel$log2FC), na.rm=T))
+  max_x = ceiling(max(abs(mss_results_sel$log2FC), na.rm=T))
+  if(nrow(mss_results_sel[mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf,]) > 0) mss_results_sel[!is.na(mss_results_sel$adj.pvalue) & (mss_results_sel$adj.pvalue == 0 | mss_results_sel$adj.pvalue == -Inf),]$adj.pvalue = 10^-decimal_threshold
+  max_y = ceiling(-log10(min(mss_results_sel[mss_results_sel$adj.pvalue > 0,]$adj.pvalue, na.rm=T))) + 1
   
   l = length(unique(mss_results_sel$Label))
   w_base = 7
@@ -263,7 +273,7 @@ prettyPrintHeatmapLabels = function(uniprot_acs, uniprot_ids, gene_names){
   #tmp_frame[is.na(tmp_frame$t),]$t=tmp_frame[is.na(tmp_frame$t),]$a
   #result = apply(tmp_frame, 1, function(x)paste0(x[1],paste(rep(' ',x[2]),collapse=''),x[3]))
   #result = apply(tmp_frame, 1, function(x)paste0(x[4],' ',x[3],collapse=''))
-  result = paste(uniprot_acs,gene_names,sep=' ')
+  result = paste(uniprot_acs,uniprot_ids,gene_names,sep=' ')
   return(result)
 }
 
