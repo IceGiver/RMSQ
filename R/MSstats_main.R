@@ -3,6 +3,7 @@
 ###############################
 ## FILE AND LIB LOADING #######
 
+rm(list = ls(all = TRUE)) 
 cat(">> LOADING EXTERNAL FILES AND LIBRARIES\n")
 
 suppressMessages(library(getopt))
@@ -86,44 +87,58 @@ aggregateData = function(data_w, keys, config, castFun){
   return(list(data_w_agg = data_w_agg, keys_agg = keysagg))
 }
 
+## returns data tabel in wide format
 normalizeData = function(data_w, config){
   cat(">> NORMALIZING\n")
-  
-  ## for missing values fill in we assume data is in wide format
-  if(config$normalization$fill_missing){
-    cat("\tMISSING VALUES\tFILL\n")
-    data_w = fillMissingMaxQEntries(data_w)
-  }
-  
+
   if(grepl('scale|quantile|cyclicloess',config$normalization$method)){
     cat(sprintf("\tNORMALIZATION\t%s\n",config$normalization$method))
     data_fn = normalizeSingle(data_w=data_w, NORMALIZATION_METHOD=config$normalization$method)  
   }else if(grepl('reference',config$normalization$method) && !is.null(config$normalization$reference) && config$normalization$reference %in% unique(data_w$Proteins)){
-    cat(sprintf("\tNORMALIZATION\tTO REFERENCE\t%s\n",config$normalization$reference))
-    ref_files = keys[keys$NormalizationGroup == 'REFERENCE', 'RawFile']
-    data_l_ref = data_l[data_l$Raw.file %in% ref_files & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
-    data_l_nonref = data_l[!(data_l$Raw.file %in% ref_files) & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
-    data_l_ref_n = normalizeToReference(data_l_ref=data_l_ref, ref_protein = config$normalization$reference, output_file = config$files$output)
-    data_fn= rbind(data_l_ref_n, data_l_nonref)
-    data_fn = castMaxQToWide(data_fn)
+    
+    ## CURRENTLY UING MSSTATS METHODS FOR REFERENCE NORMALIZATION
+    data_fn = data_w
+    
+#     cat(sprintf("\tNORMALIZATION\tTO REFERENCE\t%s\n",config$normalization$reference))
+#     ref_files = keys[keys$NormalizationGroup == 'REFERENCE', 'RawFile']
+#     data_l_ref = data_l[data_l$Raw.file %in% ref_files & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
+#     data_l_nonref = data_l[!(data_l$Raw.file %in% ref_files) & data_l$Intensity > 0 & is.finite(data_l$Intensity), ]
+#     data_l_ref_n = normalizeToReference(data_l_ref=data_l_ref, ref_protein = config$normalization$reference, output_file = config$files$output)
+#     data_fn= rbind(data_l_ref_n, data_l_nonref)
+#     data_fn = castMaxQToWide(data_fn)
+    
   }else{
     data_fn = data_w
   }
+
   return(data_fn)
 }
 
 runMSstats = function(dmss, contrasts, config){
-  qData = dataProcess(dmss, normalization=F)
-  if(!all(levels(qData$GROUP_ORIGINAL) == colnames(contrasts))){
-    cat(sprintf('\tERROR IN CONTRAST COMPARISON: GROUP LEVELS DIFFERENT FROM CONTRASTS FILE\n\tGROUP LEVELS\t%s\n\tCONTRASTS FILE\t%s\n',paste(levels(qData$GROUP_ORIGINAL),collapse=','),paste(colnames(contrasts),collapse=',')))
+  
+  if(grepl('before', config$msstats$profilePlots)){
+    mssquant = dataProcess(dmss, normalization=F, fillIncompleteRows = T)  
+    dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-before',config$files$output))
+  }
+  
+  mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=c(config$msstats$normalization_reference), fillIncompleteRows=T)
+  
+  if(grepl('after', config$msstats$profilePlots)){
+    dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-after',config$files$output))
+  }
+  
+  if(!all(levels(mssquant$GROUP_ORIGINAL) == colnames(contrasts))){
+    cat(sprintf('\tERROR IN CONTRAST COMPARISON: GROUP LEVELS DIFFERENT FROM CONTRASTS FILE\n\tGROUP LEVELS\t%s\n\tCONTRASTS FILE\t%s\n', paste(levels(mssquant$GROUP_ORIGINAL),collapse=','),paste(colnames(contrasts),collapse=',')))
     quit()
   } 
+  
   cat(sprintf('\tFITTING CONTRASTS:\t%s\n',paste(rownames(contrasts),collapse=',')))
-  results = groupComparison(contrast.matrix=contrasts, data=qData, labeled=F)$ComparisonResult  
+  results = groupComparison(data = mssquant, contrast.matrix = contrasts, labeled = as.logical(config$msstats$labeled), scopeOfBioReplication = config$msstats$scopeOfBioReplication, scopeOfTechReplication = config$msstats$scopeOfTechReplication, interference = as.logical(config$msstats$interference), equalFeatureVar = as.logical(config$msstats$equalFeatureVar), missing.action = config$msstats$missing_action)$ComparisonResult
   write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
   cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
   return(results)
 }
+
 
 convertDataLongToMss = function(data_w, keys, config){
   cat(">> CONVERTING DATA TO MSSTATS FORMAT\n")
@@ -141,14 +156,20 @@ convertDataLongToMss = function(data_w, keys, config){
 writeExtras = function(results, config){
   cat(">> ANNOTATING\n")
   if(config$output_extras$biomart){
-    mart = useMart(biomart = 'unimart', dataset = 'uniprot')
+    #mart = useMart(biomart = 'unimart')
+    mart = useMart(biomart = 'unimart', dataset = 'uniprot', verbose = T)
     mart_anns = AnnotationDbi::select(mart, keytype='accession', columns=c('accession','name','protein_name','gene_name','ensembl_id'), keys=as.character(unique(results$Protein)))
-    mart_anns = aggregate(. ~ accession, data=mart_anns, FUN=function(x)paste(unique(x),collapse=','))
-    results_ann = merge(results, mart_anns, by.x='Protein', by.y='accession', all.x=T)
-    config$files$output = gsub('.txt','-ann.txt',config$files$output)
-    cat(sprintf('\tCHANGED OUTPUT FILE TO\t%s\n',config$files$output))
-    write.table(results_ann, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
-    cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
+    if(nrow(mart_anns) > 0){
+      mart_anns = aggregate(. ~ accession, data=mart_anns, FUN=function(x)paste(unique(x),collapse=','))
+      results_ann = merge(results, mart_anns, by.x='Protein', by.y='accession', all.x=T)
+      config$files$output = gsub('.txt','-ann.txt',config$files$output)
+      cat(sprintf('\tCHANGED OUTPUT FILE TO\t%s\n',config$files$output))
+      write.table(results_ann, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
+      cat(sprintf(">> WRITTEN\t%s\n",config$files$output)) 
+    }else{
+      results_ann = results
+      config$files$output = config$output_extras$msstats_output
+    }
   }else{
     results_ann = results
     config$files$output = config$output_extras$msstats_output
@@ -169,7 +190,7 @@ writeExtras = function(results, config){
   if(config$output_extras$heatmap){
     ## plot heat map for all contrasts
     heat_labels = prettyPrintHeatmapLabels(uniprot_acs=sign_hits$Protein,uniprot_ids=sign_hits$name, gene_names=sign_hits$gene_name)
-    heat_data_w = plotHeat(sign_hits, gsub('.txt','-sign.pdf',config$files$output), names=heat_labels, cluster_cols=config$output_extras$heatmap_cluster_cols)  
+    heat_data_w = plotHeat(sign_hits, gsub('.txt','-sign.pdf',config$files$output), names=heat_labels, cluster_cols=config$output_extras$heatmap_cluster_cols, display = config$output_extras$heatmap_display)  
   }
   
   if(config$output_extras$volcano){
@@ -192,18 +213,21 @@ main <- function(opt){
     ## currently we leave this in because the MSstats discinction on labeltype doesn't work 
     ## see ISSUES https://github.com/everschueren/RMSQ/issues/1
     
-    tryCatch(setnames(data, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found, trying Raw file\n'))
-    #tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw file not found'))
+    tryCatch(setnames(data, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
+    tryCatch(setnames(keys, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
     
     cat('\tVERIFYING DATA AND KEYS\n')
+    if(!'IsotopeLabelType' %in% colnames(data)) data[,IsotopeLabelType:='L']
+
     data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
-    data$RawFile = paste(data$RawFile, data$IsotopeLabelType, sep='_')
-    keys$RawFile = paste(keys$RawFile, keys$IsotopeLabelType, sep='_')
+    data$RawFile = paste(data$RawFile, data$IsotopeLabelType, sep='')
+    keys$RawFile = paste(keys$RawFile, keys$IsotopeLabelType, sep='')
+    keys$Run = paste(keys$Run, keys$IsotopeLabelType, sep='')
     data$IsotopeLabelType = 'L'
     keys$IsotopeLabelType = 'L'
     data[Intensity<1,]$Intensity=NA ## fix for weird converted values from fread
     
-    ## end bug fixes
+    ## end hacks for SILAC
     
     ## FILTERING
     if(config$filters$enabled) data_f = filterData(data, config) else data_f=data
@@ -219,20 +243,32 @@ main <- function(opt){
       keys=res$keys_agg
     } 
     
-    ## NORMALIZATION
-    if(config$normalization$enabled) data_fn = normalizeData(data_w, config) else data_fn=data_w
+    ## NORMALIZATION -- we normalize with MSstats now
+    #if(config$normalization$enabled) data_fn = normalizeData(data_w, config) else data_fn=data_w
+    
   }
   
   ## MSSTATS
   if(config$msstats$enabled){
+    
     if(is.null(config$msstats$msstats_input)){
       dmss = convertDataLongToMss(data_w, keys, config)
     }else{
       cat(sprintf("\tREADING PREPROCESSED\t%s\n", config$msstats$msstats_input)) 
       dmss = fread(config$msstats$msstats_input, stringsAsFactors=F)
     }
+    
     cat(sprintf('>>LOADING MSSTATS %s VERSION\n', config$msstats$version))
-    if(!is.null(config$msstats$version) & config$msstats$version == 'MSstats.daily') library(config$msstats$version, character.only = T) else library(MSstats)
+    if(!is.null(config$msstats$version) & config$msstats$version == 'MSstats.daily'){
+      library('MSstats.daily', character.only = T) 
+    }else if(!is.null(config$msstats$version) & config$msstats$version == 'MSstats.dev'){
+      source('~/Code/MSstats.dev/MSstats.daily/R/mainfunctions.R')
+      source('~/Code/MSstats.dev/MSstats.daily/R/methods.R')
+      source('~/Code/MSstats.dev/Code/MQtoMSstatsFormat.R')
+    }else{
+      library(MSstats)
+    }
+    
     contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
     results = runMSstats(dmss, contrasts, config)
   }
@@ -248,5 +284,10 @@ main <- function(opt){
 #opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/ub-LF/MKL-1-22.yml')
 #opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/phospho-rad53/Rad53.yml')
 #opt = c(opt, config='~/Projects/HPCKrogan/Data/Mtb/UB/TBLMSE-UB.yml')
+#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/ub-SILAC/RMSQ_template.yml')
+#opt = c(opt, config='~/Projects/HPCKrogan/Data/HIV-Guatelli/results/20140922/MKL-1-22.yml')
+
+## TEST WORKS WITH LATEST CODE
+# opt = c(opt, config='~/Code/MSstats.dev/Tests/LabelFree-ub//LabelFree-ub-test.yaml')
 
 main(opt)
