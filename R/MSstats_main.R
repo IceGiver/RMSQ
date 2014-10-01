@@ -162,13 +162,11 @@ writeExtras = function(results, config){
     if(nrow(mart_anns) > 0){
       mart_anns = aggregate(. ~ accession, data=mart_anns, FUN=function(x)paste(unique(x),collapse=','))
       results_ann = merge(results, mart_anns, by.x='Protein', by.y='accession', all.x=T)
-      config$files$output = gsub('.txt','-ann.txt',config$files$output)
       cat(sprintf('\tCHANGED OUTPUT FILE TO\t%s\n',config$files$output))
-      write.table(results_ann, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
+      write.table(results_ann, file=gsub('.txt','-ann.txt',config$files$output), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
       cat(sprintf(">> WRITTEN\t%s\n",config$files$output)) 
     }else{
       results_ann = results
-      config$files$output = config$output_extras$msstats_output
     }
   }else{
     results_ann = results
@@ -190,7 +188,7 @@ writeExtras = function(results, config){
   if(config$output_extras$heatmap){
     ## plot heat map for all contrasts
     heat_labels = prettyPrintHeatmapLabels(uniprot_acs=sign_hits$Protein,uniprot_ids=sign_hits$name, gene_names=sign_hits$gene_name)
-    heat_data_w = plotHeat(sign_hits, gsub('.txt','-sign.pdf',config$files$output), names=heat_labels, cluster_cols=config$output_extras$heatmap_cluster_cols, display = config$output_extras$heatmap_display)  
+    heat_data_w = plotHeat(mss_F = sign_hits, out_file =  gsub('.txt','-sign.pdf',config$files$output), names=heat_labels, cluster_cols=config$output_extras$heatmap_cluster_cols, display = config$output_extras$heatmap_display)  
   }
   
   if(config$output_extras$volcano){
