@@ -259,12 +259,17 @@ main <- function(opt){
     cat(sprintf('>>LOADING MSSTATS %s VERSION\n', config$msstats$version))
     if(!is.null(config$msstats$version) & config$msstats$version == 'MSstats.daily'){
       library('MSstats.daily', character.only = T) 
-    }else if(!is.null(config$msstats$version) & config$msstats$version == 'MSstats.dev'){
-      source('~/Code/MSstats.dev/MSstats.daily/R/mainfunctions.R')
-      source('~/Code/MSstats.dev/MSstats.daily/R/methods.R')
-      source('~/Code/MSstats.dev/Code/MQtoMSstatsFormat.R')
+    }else if(!is.null(config$msstats$version) & config$msstats$version == 'MSstats'){
+      library('MSstats', character.only = T) 
     }else{
-      library(MSstats)
+      if(file.exists(config$msstats$version)){
+        for (fname in list.files(config$msstats$version, pattern = '\\.[Rr]$')){
+          cat(sprintf("\tLOADING %s\n", fname))
+          source(file.path(config$msstats$version, fname))
+        }
+      }else{
+        cat(sprintf('COULD NOT LOAD MSSTATS FUNCTIONS AT %s', config$msstats$version)) 
+      }
     }
     
     contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
