@@ -185,10 +185,10 @@ plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein', cluster_c
   colors_tot = c(colors_neg, colors_pos)
   
   if(is.null(labelOrder)){
-    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, file=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")  
+    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, filename =out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")  
   }else{
     heat_data_w = heat_data_w[,labelOrder]
-    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, file=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")
+    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, filename=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")
   }
   
   heat_data_w
