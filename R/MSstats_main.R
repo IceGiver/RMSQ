@@ -220,7 +220,7 @@ main <- function(opt){
     data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
     data$RawFile = paste(data$RawFile, data$IsotopeLabelType, sep='')
     keys$RawFile = paste(keys$RawFile, keys$IsotopeLabelType, sep='')
-    keys$Run = paste(keys$Run, keys$IsotopeLabelType, sep='')
+    keys$Run = paste(keys$IsotopeLabelType,keys$Run , sep='')
     data$IsotopeLabelType = 'L'
     keys$IsotopeLabelType = 'L'
     data[Intensity<1,]$Intensity=NA ## fix for weird converted values from fread
