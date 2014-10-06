@@ -22,24 +22,6 @@ if(length(scriptPath)==0){
 }
 
 #########################
-## CONFIG LOADING #######
-
-spec = matrix(c(
-  'verbose', 'v', 2, "integer", "",
-  'help'   , 'h', 0, "logical", "available arguments (this screen)",
-  'config'  , 'c', 1, "character", "configuration file in YAML format"),
-  byrow=TRUE, ncol=5)
-
-opt = getopt(spec = spec, opt = commandArgs(TRUE), command = get_Rscript_filename(), usage = FALSE, debug = FALSE)
-
-# if help was asked for print a friendly message
-# and exit with a non-zero error code
-if ( !is.null(opt$help) ) {
-  cat(getopt(spec, usage=TRUE));
-  q(status=1);
-}
-
-#########################
 ## MAIN FUNCTIONS #######
 
 filterData = function(data, config){
@@ -119,12 +101,15 @@ runMSstats = function(dmss, contrasts, config){
   if(grepl('before', config$msstats$profilePlots)){
     mssquant = dataProcess(dmss, normalization=F, fillIncompleteRows = T)  
     dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-before',config$files$output))
+    dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-before',config$files$output))
   }
   
-  mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=c(config$msstats$normalization_reference), fillIncompleteRows=T)
+  if(!is.null(config$msstats$normalization_reference)) normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
+  mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
   
   if(grepl('after', config$msstats$profilePlots)){
     dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-after',config$files$output))
+    dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-after',config$files$output))
   }
   
   if(!all(levels(mssquant$GROUP_ORIGINAL) == colnames(contrasts))){
@@ -196,6 +181,9 @@ writeExtras = function(results, config){
     volcanoPlot(results_ann[grep(selected_labels,results_ann$Label),], lfc_upper, lfc_lower, FDR=config$output_extras$FDR, file_name=file_name)  
   }
 }
+
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+
 
 main <- function(opt){
   cat(">> MSSTATS PIPELINE\n")
@@ -281,6 +269,24 @@ main <- function(opt){
     if(! is.null(config$output_extras$msstats_output)) results = read.delim(config$output_extras$msstats_output, stringsAsFactors=F)
     writeExtras(results, config)
   }
+}
+
+#########################
+## CONFIG LOADING #######
+
+spec = matrix(c(
+  'verbose', 'v', 2, "integer", "",
+  'help'   , 'h', 0, "logical", "available arguments (this screen)",
+  'config'  , 'c', 1, "character", "configuration file in YAML format"),
+  byrow=TRUE, ncol=5)
+
+opt = getopt(spec = spec, opt = commandArgs(TRUE), command = get_Rscript_filename(), usage = FALSE, debug = FALSE)
+
+# if help was asked for print a friendly message
+# and exit with a non-zero error code
+if ( !is.null(opt$help) ) {
+  cat(getopt(spec, usage=TRUE));
+  q(status=1);
 }
 
 #opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/abundance/RMSQ_template.yml')
