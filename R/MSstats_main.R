@@ -104,8 +104,15 @@ runMSstats = function(dmss, contrasts, config){
     dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-before',config$files$output))
   }
   
-  if(!is.null(config$msstats$normalization_reference)) normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
-  mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
+  if(!is.null(config$msstats$normalization_reference) && config$msstats$normalization_method == 'globalStandards'){
+  	normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
+  	mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
+  }else if(config$msstats$normalization_method != 0){
+  	mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, fillIncompleteRows=T)
+  }else{
+  	mssquant = dataProcess(dmss, fillIncompleteRows=T)
+  } 
+  
   
   if(grepl('after', config$msstats$profilePlots)){
     dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-after',config$files$output))
