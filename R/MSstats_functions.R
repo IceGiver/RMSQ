@@ -45,8 +45,8 @@ castMaxQToWide = function(d_long, aggregateFun=sum){
   return(data_w)
 }
 
-castMaxQToWidePTM = function(d_long, aggregateFun=sum){
-  data_w = dcast.data.table( Proteins + Modified.sequence + Charge ~ RawFile + IsotopeLabelType, data=d_long, value.var='Intensity', fun.aggregate=aggregateFun, fill=NA)
+castMaxQToWidePTM = function(d_long){
+  data_w = dcast.data.table( Proteins + Modified.sequence + Charge ~ RawFile + IsotopeLabelType, data=d_long, value.var='Intensity', fun.aggregate=sum, fill=NA)
   setnames(data_w,2,'Sequence')
   return(data_w)
 }
