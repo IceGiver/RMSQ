@@ -104,8 +104,12 @@ runMSstats = function(dmss, contrasts, config){
     dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-before',config$files$output))
   }
   
-  if(!is.null(config$msstats$normalization_reference)) normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
-  mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
+  if(!is.null(config$msstats$normalization_reference) & config$msstats$normalization_method == 'globalStandards'){
+    normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
+    mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
+  }else{
+    mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method , fillIncompleteRows=T)
+  } 
   
   if(grepl('after', config$msstats$profilePlots)){
     dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-after',config$files$output))
@@ -221,6 +225,13 @@ main <- function(opt){
     ## FORMATTING IN WIDE FORMAT FOR NORMALIZATION PURPOSES
     if(config$files$sequence_type == 'modified') castFun = castMaxQToWidePTM else castFun = castMaxQToWide
     data_w = castFun(data_f)
+    
+    ## test code for heatmap
+    if(!is.null(config$files$sample_plots) && config$files$sample_plots){
+      keys_in_data = keys[keys$RawFile %in% unique(data$RawFile),]
+      sampleCorrelationHeatmap(data_w = data_w, keys = keys_in_data, config = config) 
+      samplePeptideBarplot(data_f, config)
+    }
     
     ## AGGREGATION
     if(config$aggregation$enabled){
