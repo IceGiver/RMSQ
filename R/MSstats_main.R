@@ -271,6 +271,12 @@ main <- function(opt){
       }
     }
     
+    if(RUNMODE == 'DEBUG'){
+      protein_sample  = sample(unique(dmss$ProteinName), 100)
+      dmss_sample = dmss[dmss$ProteinName %in% protein_sample,]
+      dmss = dmss_sample
+    }
+    
     contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
     results = runMSstats(dmss, contrasts, config)
   }
