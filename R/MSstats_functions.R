@@ -156,6 +156,29 @@ dataToMSSFormat = function(d){
   tmp
 }
 
+samplePeptideBarplot = function(data, config){
+  pdf(gsub('.txt','-peptidecounts.pdf',config$files$output), width = 10, height=7)
+  data = data.table(data, labels=paste(data$RawFile, data$Condition, data$BioReplicate))
+  p = ggplot(data = data, aes(x=labels)) 
+  p + geom_bar() + theme(axis.text.x = element_text(angle = 90, hjust = 1, family = 'mono')) + ggtitle('Unique peptides per MS run after filtering steps')
+  dev.off()  
+}
+
+sampleCorrelationHeatmap <- function (data_w, keys, config) {
+  mat = log2(data_w[,4:ncol(data_w),with=F])
+  mat[is.na(mat)]=0
+  mat_cor = cor(mat, method = 'pearson', use = 'everything')
+  ordered_keys = keys[with(keys, order(RawFile)),] ## we want to make informarive row names so order by RawFile because that's how data_w is ordered
+  mat_names = paste(ordered_keys$Condition, ordered_keys$BioReplicate, ordered_keys$Run)
+  colnames(mat_cor) = mat_names
+  rownames(mat_cor) = mat_names
+  colors_pos = colorRampPalette(brewer.pal("Blues",n=5))(10)
+  colors_neg = rev(colorRampPalette(brewer.pal("Reds",n=5))(10))
+  colors_tot = c(colors_neg, colors_pos)
+  pheatmap(mat = mat_cor, cellwidth = 10, cellheight = 10, scale = 'none', filename = gsub('.txt','-heatmap.pdf',config$files$output), color = colors_tot, breaks = seq(from=-1,to = 1, by=.1), fontfamily="mono")
+  
+}
+
 plotHeat = function(mss_F, out_file, labelOrder=NULL, names='Protein', cluster_cols=F, display='log2FC'){
   heat_data = data.frame(mss_F, names=names)
   #heat_data = mss_F[,c('uniprot_id','Label','log2FC')]
