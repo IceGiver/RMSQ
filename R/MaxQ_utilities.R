@@ -1,7 +1,6 @@
 #! /usr/bin/Rscript --vanilla
 
 require(bit64)
-library(Rmpfr)
 
 ###############################
 ## FILE AND LIB LOADING #######
