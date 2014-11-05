@@ -235,7 +235,7 @@ main <- function(opt){
     
     ## AGGREGATION
     if(config$aggregation$enabled){
-      res = aggregateData(data_w, keys, config, castFun)
+      res = aggregateData(data_w, keys, config)
       data_w=res$data_w_agg
       keys=res$keys_agg
     } 
