@@ -272,6 +272,7 @@ main <- function(opt){
     }
     
     if(RUNMODE == 'DEBUG'){
+      set.seed(7)
       protein_sample  = sample(unique(dmss$ProteinName), 100)
       dmss_sample = dmss[dmss$ProteinName %in% protein_sample,]
       dmss = dmss_sample
