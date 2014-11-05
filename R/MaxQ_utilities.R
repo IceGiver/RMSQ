@@ -67,18 +67,20 @@ MQutil.concat = function(filenames, output){
   res = NULL
   unique_files = c()
   
-  for(file in files){
+  for(f in 1:length(files)){
+    file = files[f]
     tmp = fread(file, stringsAsFactors=F, colClasses = c(Intensity='character'))
     tmp$Intensity = as.numeric(tmp$Intensity)
     #tmp$Intensity L = as.numeric(tmp[,'Intensity L',with=F])
     
     unique_files_current = unique(tmp[['Raw file']])
     if(!is.null(intersect(unique_files_current,unique_files)) && length(intersect(unique_files_current,unique_files))>0) cat(sprintf('\tWARNING DUPLICATE RAW FILE ENTRIES IN FILE %s:\t%s\n',file, paste(intersect(unique_files_current, unique_files),collapse=',')))
+    select_colnames = grep('Raw\ file|Intensity|Proteins|Modifications|Sequence|Modified\ sequence|Charge|Protein\ group\ IDs|id|Retention\ time|Reverse|Contaminant',colnames(tmp), ignore.case = F)
+    tmp = tmp[,select_colnames,with=F]
     res = rbind(res, tmp)
     unique_files = c(unique_files, unique_files_current)  
   }
-  select_colnames = grep('Raw\ file|Intensity|Proteins|Modifications|Sequence|Modified\ sequence|Charge|Protein\ group\ IDs|id|Retention\ time|Reverse|Contaminant',colnames(res), ignore.case = F)
-  res = res[,select_colnames,with=F]
+  
   cat(sprintf('\tWRITING\t%s\n',output))
   write.table(res, file=output, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
   cat(sprintf('\tWRITING\t%s\n',gsub('.txt','-keys.txt',output)))
