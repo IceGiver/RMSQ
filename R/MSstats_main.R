@@ -63,9 +63,9 @@ aggregateData = function(data_w, keys, config, castFun){
                            error = function(e) cat("\tWARNING: argument for aggregate_fun not a valid R function - defaulting to:\t 'max'"), 
                            finally=max) 
   
-  data_l_combined_agg = data.table(aggregate(Intensity ~ RawFileCombined + Proteins + Sequence + Charge + IsotopeLabelType, FUN=aggregate_fun, data=data_l_combined))
+  data_l_combined_agg = data.table(aggregate(Intensity ~ RawFileCombined + Proteins + Sequence + Charge + IsotopeLabelType, FUN=sum, data=data_l_combined))
   setnames(data_l_combined_agg,'RawFileCombined','RawFile')
-  data_w_agg = castFun(data_l_combined_agg)
+  data_w_agg = castMaxQToWide(data_l_combined_agg)
   return(list(data_w_agg = data_w_agg, keys_agg = keysagg))
 }
 
