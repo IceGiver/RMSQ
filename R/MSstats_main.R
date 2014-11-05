@@ -249,7 +249,12 @@ main <- function(opt){
   if(config$msstats$enabled){
     
     if(is.null(config$msstats$msstats_input)){
-      dmss = convertDataLongToMss(data_w, keys, config)
+      dmss = data.table(convertDataLongToMss(data_w, keys, config))
+      
+      ## make sure there are no doubles !!
+      ## doubles could arise when protein groups are being kept and the same peptide is assigned to a unique Protein. Not sure how this is possible but it seems to be like this in maxquant output. A possible explanation is that these peptides have different retention times (needs to be looked into)
+      dmss = data.frame(dmss[,j=list(ProteinName=paste(ProteinName,collapse=';'),Intensity=median(Intensity)),by=c('PeptideSequence','ProductCharge','PrecursorCharge','FragmentIon','IsotopeLabelType','Run','BioReplicate','Condition')])
+      
     }else{
       cat(sprintf("\tREADING PREPROCESSED\t%s\n", config$msstats$msstats_input)) 
       dmss = fread(config$msstats$msstats_input, stringsAsFactors=F)
