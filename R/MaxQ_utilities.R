@@ -101,7 +101,7 @@ main <- function(opt){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
     #loadLibs()
     if(opt$command == 'concat'){
-      MQutil.concat(opt$files, opt$output)
+      MQutil.concat(filenames=opt$files, output = opt$output)
     }else if(opt$command == 'convert-silac'){
       MQutil.SILACToLong(filename = opt$files, output = opt$output)
     }else if(opt$command == 'keys'){
