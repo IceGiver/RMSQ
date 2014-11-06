@@ -322,4 +322,5 @@ if ( !is.null(opt$help) ) {
 ## TEST WORKS WITH LATEST CODE
 # opt = c(opt, config='~/Code/MSstats.dev/Tests/LabelFree-ub//LabelFree-ub-test.yaml')
 
+RUNMODE='RUN'
 main(opt)
