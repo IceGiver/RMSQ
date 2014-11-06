@@ -1,28 +1,33 @@
 #! /usr/bin/Rscript --vanilla
 
-require(bit64)
+suppressMessages(library(data.table))
+suppressMessages(library(seqinr))
+suppressMessages(library(stringr))
+suppressMessages(require(bit64))
+suppressMessages(library(getopt))
 
 ###############################
 ## FILE AND LIB LOADING #######
 
-suppressMessages(library(getopt))
-
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
   'help'   , 'h', 0, "logical", "available arguments (this screen)",
   'command'  , 'c', 1, "character", sprintf("command to run. Currently supported commands: %s",paste(ALLOWED_COMMANDS,collapse=',')),
   'files'  , 'f', 1, "character", "files to feed to command. accepts regexp but needs to be quoted",
-  'output'  , 'o', 1, "character", "Output file"),
-  byrow=TRUE, ncol=5)
+  'output'  , 'o', 1, "character", "Output file",
+  'proteome'  , 'p', 1, "character", "Reference Proteome FASTA file",
+  'mod_site','m', 1, "character", "Modification AA",
+  'mod_type','t', 1, "character", "Modification type: ub"),
+  byrow=T, ncol=5)
 
 opt = getopt(spec = spec, opt = commandArgs(TRUE), command = get_Rscript_filename(), usage = FALSE, debug = FALSE)
 
-# if help was asked for print a friendly message
+  # if help was asked for print a friendly message
 # and exit with a non-zero error code
 if ( !is.null(opt$help) ) {
   cat(getopt(spec, usage=TRUE));
@@ -98,6 +103,104 @@ MQutil.getKeys = function(filename, output){
   cat(sprintf('\tWRITTEN\t%s\n',output))
 }
 
+
+MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output_file, mod_residue='K', mod_type='ub') {
+  
+  if(mod_type=='ub'){
+    maxq_mod_residue='K\\(gl\\)'  
+  }
+  
+  ## read in ref. proteome
+  ref_proteome = read.fasta(file = ref_proteome_file, 
+                            seqtype = "AA", as.string = T,
+                            set.attributes = TRUE, legacy.mode = TRUE, seqonly = FALSE, strip.desc = FALSE)
+  
+  ######################
+  ## make mod-site index
+  
+  p_seqs = c()
+  p_names = c()
+  p_annots = c()
+  
+  for(e in ref_proteome){
+    p_seqs = c(p_seqs, e[1])
+    p_names = c(p_names, attr(e,'name'))
+    p_annots = c(p_annots, attr(e,'Annot'))
+  }
+  
+  ref_table = data.table(names=p_names, annots=p_annots, seqs=p_seqs)
+  ref_table[,uniprot_ac:=gsub('(sp\\|{1})([A-Z,0-9]+)(\\|{1})([A-Z,0-9,_]+)','\\2',names)]
+  ref_table[,uniprot_id:=gsub('(sp\\|{1})([A-Z,0-9]+)(\\|{1})([A-Z,0-9,_]+)','\\4',names)]
+  
+  indices = lapply(ref_table$seqs, function(x) as.vector(str_locate_all(x,pattern='K')[[1]]))
+  lengths = unlist(lapply(indices, FUN = length))
+  keys = rep(ref_table$uniprot_ac, lengths)
+  protein_indices = data.table(uniprot_ac=keys, ptm_site=mod_residue, res_index = unlist(indices))
+  
+  #################################
+  ## map mod sites in data to index 
+  
+  ## read in maxq. data
+  maxq_data = fread(maxq_file)
+  unique_peptides_in_data = unique(maxq_data[,c('Proteins','Modified sequence'),with=F])
+  setnames(unique_peptides_in_data,'Modified sequence','sequence')
+  
+  mod_sites = c()
+  mod_seqs = c()
+  
+  for(i in 1:nrow(unique_peptides_in_data)){
+    entry = unique_peptides_in_data[i,]
+    peptide_seq = entry$sequence
+    ## cleanup the sequence (removing all modifications) for matching the protein sequence
+    peptide_seq_clean = gsub('[a-z,0-9,\\(,\\),_]','', peptide_seq)
+    mod_sites_in_peptide = str_locate_all(string = peptide_seq, pattern = maxq_mod_residue)[[1]][,1]
+    
+    if(length(mod_sites_in_peptide)>0){
+      uniprot_acs = entry$Proteins
+      uniprot_acs = str_split(string = uniprot_acs, pattern = ';')[[1]]
+      
+      for(uac in uniprot_acs){
+        protein_seq = ref_table[uniprot_ac==uac,]$seqs
+        if(length(protein_seq)>0){
+          ## get the position of the peptide in the protein sequence
+          peptide_index_in_protein = str_locate(protein_seq, peptide_seq_clean)[[1]][1]
+          
+          for(m in 1:length(mod_sites_in_peptide)){
+            mod_site = mod_sites_in_peptide[m]   
+            peptide_seq_before_site = str_sub(peptide_seq, 1, mod_site-1)
+            ## count all AA (not counting all modifications) before the modification to get the relative position of the modification in the peptide sequence
+            residues_before_site = str_count(string = peptide_seq_before_site, pattern = 'A|C|D|E|F|G|H|I|K|L|M|N|P|Q|R|S|T|V|W|Y')
+            mod_site_index_in_protein = peptide_index_in_protein+residues_before_site
+            mod_site_id = sprintf('%s_%s%s', uac, mod_residue, mod_site_index_in_protein)
+            protein_mod_sites = protein_indices[uniprot_ac==uac,]
+            if(mod_site_index_in_protein %in% protein_mod_sites$res_index){
+              #cat(sprintf('%s\n',mod_site_id))
+              mod_sites = c(mod_sites, mod_site_id)
+              mod_seqs = c(mod_seqs, peptide_seq)
+              stopifnot(length(mod_sites)==length(mod_seqs))
+            }else{
+              cat(sprintf('MISMATCH\t%s\n\tPEPTIDE_SEQ\t%s\n\tMOD_SITE\t%s\n\tPEPTIDE_IDX_IN_PROTEIN\t%s\n\tRESIDUES_BEFORE_SITE\t%s\n\tPROTEIN_SEQ\t%s\n',mod_site_id, peptide_seq, mod_site, peptide_index_in_protein, residues_before_site, protein_seq))
+            } 
+          }
+        }
+      }  
+    }
+  }
+  
+  mod_site_mapping = data.table(mod_sites, mod_seqs)
+  mod_site_mapping_agg = aggregate(mod_sites ~ mod_seqs, mod_site_mapping, FUN=function(x)paste(x,collapse=','))
+  
+  setnames(maxq_data,'Modified sequence','mod_seqs')
+  unmapped_mod_seqs = maxq_data[!(mod_seqs %in% mod_site_mapping_agg$mod_seqs) & grepl('(gl)',mod_seqs) & !grepl('REV__|CON__',Proteins),]
+  unmapped_mod_seqs = unique(unmapped_mod_seqs[,c('mod_seqs','Proteins'),with=F])
+  cat('UNABLE TO MAP\n')
+  print(unmapped_mod_seqs)
+  
+  final_data = merge(maxq_data, mod_site_mapping_agg, by='mod_seqs')
+  setnames(final_data,c('Proteins','mod_sites','mod_seqs'),c('Proteins_ref','Proteins','Modified sequence'))
+  write.table(final_data, file = output_file, eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
+}
+
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
@@ -108,6 +211,8 @@ main <- function(opt){
       MQutil.SILACToLong(filename = opt$files, output = opt$output)
     }else if(opt$command == 'keys'){
       MQutil.getKeys(filename = opt$files, output = opt$output)
+    }else if(opt$command == 'convert-sites'){
+      MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_residue = opt$mod_site, mod_type = opt$mod_type)
     }  
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
