@@ -129,8 +129,7 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   }
   
   ref_table = data.table(names=p_names, annots=p_annots, seqs=p_seqs)
-  ref_table[,uniprot_ac:=gsub('(sp\\|{1})([A-Z,0-9]+)(\\|{1})([A-Z,0-9,_]+)','\\2',names)]
-  ref_table[,uniprot_id:=gsub('(sp\\|{1})([A-Z,0-9]+)(\\|{1})([A-Z,0-9,_]+)','\\4',names)]
+  ref_table[,uniprot_ac:=gsub('([a-z,0-9,A-Z]+\\|{1})([A-Z,0-9,\\_]+)(\\|[A-Z,a-z,0-9,_]+)','\\2',names)]
   
   indices = lapply(ref_table$seqs, function(x) as.vector(str_locate_all(x,pattern='K')[[1]]))
   lengths = unlist(lapply(indices, FUN = length))
