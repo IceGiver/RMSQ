@@ -159,7 +159,7 @@ dataToMSSFormat = function(d){
 samplePeptideBarplot = function(data, config){
   pdf(gsub('.txt','-peptidecounts.pdf',config$files$output), width =8, height=10)
   data = data.table(data, labels=paste(data$RawFile, data$Condition, data$BioReplicate))
-  data = data[with(data, order(-labels)),]
+  data = data[with(data, order(labels,decreasing = T)),]
   p = ggplot(data = data, aes(x=labels))
   p + geom_bar() + theme(axis.text.x = element_text(angle = 90, hjust = 1, family = 'mono')) + ggtitle('Unique peptides per MS run after filtering') + coord_flip()
   dev.off()  
