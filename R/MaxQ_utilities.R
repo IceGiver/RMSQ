@@ -21,7 +21,6 @@ spec = matrix(c(
   'files'  , 'f', 1, "character", "files to feed to command. accepts regexp but needs to be quoted",
   'output'  , 'o', 1, "character", "Output file",
   'proteome'  , 'p', 1, "character", "Reference Proteome FASTA file",
-  'mod_site','m', 1, "character", "Modification AA",
   'mod_type','t', 1, "character", "Modification type: ub"),
   byrow=T, ncol=5)
 
@@ -104,10 +103,14 @@ MQutil.getKeys = function(filename, output){
 }
 
 
-MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output_file, mod_residue='K', mod_type='ub') {
+MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output_file, mod_type='ub') {
   
   if(mod_type=='ub'){
-    maxq_mod_residue='K\\(gl\\)'  
+    maxq_mod_residue='K\\(gl\\)'
+    mod_residue = 'K'
+  }else if(mod_type=='ph'){
+    maxq_mod_residue='(S|T|Y)\\(ph\\)'  
+    mod_residue = 'S|T|Y'
   }
   
   ## read in ref. proteome
@@ -131,10 +134,11 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   ref_table = data.table(names=p_names, annots=p_annots, seqs=p_seqs)
   ref_table[,uniprot_ac:=gsub('([a-z,0-9,A-Z]+\\|{1})([A-Z,0-9,\\_]+)(\\|[A-Z,a-z,0-9,_]+)','\\2',names)]
   
-  indices = lapply(ref_table$seqs, function(x) as.vector(str_locate_all(x,pattern='K')[[1]]))
+  indices = lapply(ref_table$seqs, function(x) as.vector(str_locate_all(x,pattern=mod_residue)[[1]][,1]))
+  ptm_sites = lapply(ref_table$seqs, function(x) as.vector(str_match_all(x,pattern=mod_residue)))
   lengths = unlist(lapply(indices, FUN = length))
   keys = rep(ref_table$uniprot_ac, lengths)
-  protein_indices = data.table(uniprot_ac=keys, ptm_site=mod_residue, res_index = unlist(indices))
+  protein_indices = data.table(uniprot_ac=keys, ptm_site=unlist(ptm_sites), res_index = unlist(indices))
   
   #################################
   ## map mod sites in data to index 
@@ -170,10 +174,11 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
             ## count all AA (not counting all modifications) before the modification to get the relative position of the modification in the peptide sequence
             residues_before_site = str_count(string = peptide_seq_before_site, pattern = 'A|C|D|E|F|G|H|I|K|L|M|N|P|Q|R|S|T|V|W|Y')
             mod_site_index_in_protein = peptide_index_in_protein+residues_before_site
-            mod_site_id = sprintf('%s_%s%s', uac, mod_residue, mod_site_index_in_protein)
             protein_mod_sites = protein_indices[uniprot_ac==uac,]
             if(mod_site_index_in_protein %in% protein_mod_sites$res_index){
               #cat(sprintf('%s\n',mod_site_id))
+              mod_res = protein_mod_sites[res_index==mod_site_index_in_protein,ptm_site]
+              mod_site_id = sprintf('%s_%s%s', uac, str_sub(protein_seq,mod_site_index_in_protein,mod_site_index_in_protein), mod_site_index_in_protein)
               mod_sites = c(mod_sites, mod_site_id)
               mod_seqs = c(mod_seqs, peptide_seq)
               stopifnot(length(mod_sites)==length(mod_seqs))
@@ -211,7 +216,7 @@ main <- function(opt){
     }else if(opt$command == 'keys'){
       MQutil.getKeys(filename = opt$files, output = opt$output)
     }else if(opt$command == 'convert-sites'){
-      MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_residue = opt$mod_site, mod_type = opt$mod_type)
+      MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_type = opt$mod_type)
     }  
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
@@ -226,5 +231,11 @@ main <- function(opt){
 # opt$command = 'concat'
 # opt$files = '~/Projects/HPCKrogan/Data/Mtb/Files/073113*evidence.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
+
+# opt$command = 'convert-sites'
+# opt$files =  '~/Projects/HPCKrogan/Data/PTEN-phospho/data/110414-evp-25-32-evidence.txt' 
+# opt$output = '~/Projects/HPCKrogan/Data/PTEN-phospho/data/110414-evp-25-32-evidence=modSTY.txt' 
+# opt$mod_type = 'ph'
+# opt$proteome = '~/Projects/HPCKrogan/Data/Uniprot/homo-sapiens-swissprot.fasta'
 
 main(opt)
