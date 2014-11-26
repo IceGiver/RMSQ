@@ -5,6 +5,9 @@ suppressMessages(library(seqinr))
 suppressMessages(library(stringr))
 suppressMessages(require(bit64))
 suppressMessages(library(getopt))
+suppressMessages(library(reshape2))
+suppressMessages(library(biomaRt))
+suppressMessages(library(limma))
 
 ###############################
 ## FILE AND LIB LOADING #######
@@ -12,7 +15,7 @@ suppressMessages(library(getopt))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -217,12 +220,56 @@ main <- function(opt){
       MQutil.getKeys(filename = opt$files, output = opt$output)
     }else if(opt$command == 'convert-sites'){
       MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_type = opt$mod_type)
+    }else if(opt$command == 'annotate'){
+      MQutil.annotate(input_file = opt$files, output_file = opt$output )
     }  
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
     cat(sprintf('ALLOWED COMMANDS:\t%s\n',paste(ALLOWED_COMMANDS,collapse=','))) 
   }
 }
+
+MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot_ac_col='Protein', group_sep=';'){
+  
+  cat(">> ANNOTATING\n")
+  results = fread(input_file)
+  mart = useMart(biomart = 'ensembl', dataset='hsapiens_gene_ensembl',verbose = T)
+  ids = unique(results[,uniprot_ac_col,with=F])
+  id_table = data.table(group_id=1:nrow(ids), uniprot_acs=ids)
+  setnames(id_table, 2,uniprot_ac_col)
+  results = merge(results, id_table, by=uniprot_ac_col)
+  
+  ids_split = c()
+  uniprot_acs_split = c()
+  
+  for(id in 1:nrow(id_table)){
+    id_row = id_table[id,]
+    uniprot_ac_vec = unlist(str_split(unlist(id_row[,2,with=F]), pattern=group_sep))
+    ids_split = c(ids_split,rep(unlist(id_row[,1,with=F]),times=length(uniprot_ac_vec)))
+    uniprot_acs_split = c(uniprot_acs_split,uniprot_ac_vec)
+  }
+  
+  id_table_split = unique(data.table(group_id=ids_split, uniprot_ac=uniprot_acs_split))
+  
+  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','uniprot_genename','description'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
+  mart_anns = aggregate(. ~ uniprot_swissprot, data=mart_anns, FUN=function(x)paste(unique(x),collapse=','))
+  setnames(mart_anns, 'uniprot_swissprot', 'uniprot_ac')
+  
+  id_table_annotated = merge(id_table_split, mart_anns, 'uniprot_ac', all.x=T)
+  id_table_annotated_flat = aggregate(. ~ group_id, data=id_table_annotated, FUN=function(x)paste(unique(x),collapse=','))
+  results_out = merge(results, id_table_annotated_flat, by='group_id', all.x=T)
+  
+  unmapped = unique(results_out[is.na(results_out$uniprot_ac),uniprot_ac_col,with=F]) 
+  cat(sprintf('UNMAPPED PROTEINS\t%s\n%s\n',nrow(unmapped),paste(unmapped$Protein,collapse=',')))
+  
+  write.table(results_out, file=output_file, sep='\t', quote=F, row.names=F, col.names=T)
+  #return(results_out)
+  
+}
+
+# opt$command = 'annotate'
+# opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
 
 # opt$command = 'convert-silac'
 # opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence.txt'
