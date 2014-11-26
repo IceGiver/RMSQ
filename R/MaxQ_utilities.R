@@ -15,7 +15,7 @@ suppressMessages(library(limma))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -208,26 +208,6 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   write.table(final_data, file = output_file, eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
 }
 
-main <- function(opt){
-  if(opt$command %in% ALLOWED_COMMANDS){
-    cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
-    #loadLibs()
-    if(opt$command == 'concat'){
-      MQutil.concat(filenames=opt$files, output = opt$output)
-    }else if(opt$command == 'convert-silac'){
-      MQutil.SILACToLong(filename = opt$files, output = opt$output)
-    }else if(opt$command == 'keys'){
-      MQutil.getKeys(filename = opt$files, output = opt$output)
-    }else if(opt$command == 'convert-sites'){
-      MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_type = opt$mod_type)
-    }else if(opt$command == 'annotate'){
-      MQutil.annotate(input_file = opt$files, output_file = opt$output )
-    }  
-  }else{
-    cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
-    cat(sprintf('ALLOWED COMMANDS:\t%s\n',paste(ALLOWED_COMMANDS,collapse=','))) 
-  }
-}
 
 MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot_ac_col='Protein', group_sep=';'){
   
@@ -266,6 +246,47 @@ MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot
   #return(results_out)
   
 }
+
+MQUtil.resultsWide = function(input_file, output_file){
+  input = fread(input_file)
+  input_l = melt(data = input[,c('Protein', 'Label','log2FC','adj.pvalue'),with=F],id.vars=c('Protein', 'Label'))
+  
+  ## then cast to get combinations of LFCV/PVAl and Label as columns
+  input_w = dcast.data.table( Protein ~ Label+variable, data=input_l, value.var=c('value'))
+  write.table(input_w, file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
+}
+
+
+main <- function(opt){
+  if(opt$command %in% ALLOWED_COMMANDS){
+    cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
+    #loadLibs()
+    if(opt$command == 'concat'){
+      MQutil.concat(filenames=opt$files, output = opt$output)
+    }else if(opt$command == 'convert-silac'){
+      MQutil.SILACToLong(filename = opt$files, output = opt$output)
+    }else if(opt$command == 'keys'){
+      MQutil.getKeys(filename = opt$files, output = opt$output)
+    }else if(opt$command == 'convert-sites'){
+      MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_type = opt$mod_type)
+    }else if(opt$command == 'annotate'){
+      MQutil.annotate(input_file = opt$files, output_file = opt$output )
+    }else if(opt$command == 'results-wide'){
+      MQutil.resultsWide(input_file = opt$files, output_file = opt$output )
+    }
+  }else{
+    cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
+    cat(sprintf('ALLOWED COMMANDS:\t%s\n',paste(ALLOWED_COMMANDS,collapse=','))) 
+  }
+}
+
+# opt$command = 'results-wide'
+# opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
+
+# opt$command = 'annotate'
+# opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
 
 # opt$command = 'annotate'
 # opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
