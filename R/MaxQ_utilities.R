@@ -287,6 +287,7 @@ main <- function(opt){
     }else if(opt$command == 'convert-sites'){
       MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_type = opt$mod_type)
     }else if(opt$command == 'annotate'){
+      if(is.null(opt$biomart_db)) opt$biomart_db = 'hsapiens_gene_ensembl'
       MQutil.annotate(input_file = opt$files, output_file = opt$output , db = opt$biomart_db)
     }else if(opt$command == 'results-wide'){
       MQutil.resultsWide(input_file = opt$files, output_file = opt$output )
