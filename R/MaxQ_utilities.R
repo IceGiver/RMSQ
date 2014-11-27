@@ -15,7 +15,7 @@ suppressMessages(library(limma))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -256,6 +256,15 @@ MQUtil.resultsWide = function(input_file, output_file){
   write.table(input_w, file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
 }
 
+MQutil.mapSitesBack = function(input_file, mapping_file, output_file){
+  input = fread(input_file)
+  setnames(input,'Protein','mod_sites')
+  mapping = fread(mapping_file)
+  mapping = unique(mapping[!is.na(mod_sites),c('Proteins','mod_sites'),with=F])
+  mapping = aggregate(Proteins ~ mod_sites, data=mapping, FUN=function(x)paste(x,collapse='T'))
+  out = merge(input, mapping, by='mod_sites', all.x=T)
+  write.table(out[,c(ncol(out),1:(ncol(out)-1)),with=F], file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
+}
 
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
@@ -270,9 +279,11 @@ main <- function(opt){
     }else if(opt$command == 'convert-sites'){
       MQutil.ProteinToSiteConversion (maxq_file = opt$files, output_file = opt$output, ref_proteome_file = opt$proteome, mod_type = opt$mod_type)
     }else if(opt$command == 'annotate'){
-      MQutil.annotate(input_file = opt$files, output_file = opt$output )
+      MQutil.annotate(input_file = opt$files, output_file = opt$output , db = opt$biomart_db)
     }else if(opt$command == 'results-wide'){
       MQutil.resultsWide(input_file = opt$files, output_file = opt$output )
+    }else if(opt$command == 'mapback-sites'){
+      MQutil.mapSitesBack(input_file = opt$files, output_file = opt$output , mapping_file = opt$mapping)
     }
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
