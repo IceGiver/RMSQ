@@ -24,6 +24,8 @@ spec = matrix(c(
   'files'  , 'f', 1, "character", "files to feed to command. accepts regexp but needs to be quoted",
   'output'  , 'o', 1, "character", "Output file",
   'proteome'  , 'p', 1, "character", "Reference Proteome FASTA file",
+  'mapping'  , 'm', 1, "character", "mapping file produced by convert-sites",
+  'biomart_db'  , 'b', 1, "character", "name of biomart database to use for mapping, default=hsapiens_gene_ensembl",
   'mod_type','t', 1, "character", "Modification type: ub"),
   byrow=T, ncol=5)
 
@@ -206,14 +208,20 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   final_data = merge(maxq_data, mod_site_mapping_agg, by='mod_seqs')
   setnames(final_data,c('Proteins','mod_sites','mod_seqs'),c('Proteins_ref','Proteins','Modified sequence'))
   write.table(final_data, file = output_file, eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
+  
+  ## write a mapping table
+  protein_seq_mapping = unique(maxq_data[,c('Proteins','mod_seqs'),with=F])
+  setnames(protein_seq_mapping,'Proteins','Protein')
+  mapping_table = merge(protein_seq_mapping, mod_site_mapping_agg, by='mod_seqs', all=T)
+  write.table(mapping_table, file=gsub('.txt','-mapping.txt',output_file), eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
 }
 
 
-MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot_ac_col='Protein', group_sep=';'){
+MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot_ac_col='Protein', group_sep=';', db='hsapiens_gene_ensembl'){
   
   cat(">> ANNOTATING\n")
   results = fread(input_file)
-  mart = useMart(biomart = 'ensembl', dataset='hsapiens_gene_ensembl',verbose = T)
+  mart = useMart(biomart = 'ensembl', dataset=db,verbose = T)
   ids = unique(results[,uniprot_ac_col,with=F])
   id_table = data.table(group_id=1:nrow(ids), uniprot_acs=ids)
   setnames(id_table, 2,uniprot_ac_col)
@@ -247,7 +255,7 @@ MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot
   
 }
 
-MQUtil.resultsWide = function(input_file, output_file){
+MQutil.resultsWide = function(input_file, output_file){
   input = fread(input_file)
   input_l = melt(data = input[,c('Protein', 'Label','log2FC','adj.pvalue'),with=F],id.vars=c('Protein', 'Label'))
   
@@ -299,10 +307,6 @@ main <- function(opt){
 # opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
 
-# opt$command = 'annotate'
-# opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
-# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
-
 # opt$command = 'convert-silac'
 # opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
@@ -312,9 +316,14 @@ main <- function(opt){
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
 
 # opt$command = 'convert-sites'
-# opt$files =  '~/Projects/HPCKrogan/Data/PTEN-phospho/data/110414-evp-25-32-evidence.txt' 
-# opt$output = '~/Projects/HPCKrogan/Data/PTEN-phospho/data/110414-evp-25-32-evidence=modSTY.txt' 
-# opt$mod_type = 'ph'
+# opt$files =  '~/Projects/HPCKrogan/Data/HIV-proteomics/data//UB-silac//HIV-UB-SILAC-KROGAN-data.txt' 
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/data//UB-silac//HIV-UB-SILAC-KROGAN-data-modK.txt'
+# opt$mod_type = 'ub'
 # opt$proteome = '~/Projects/HPCKrogan/Data/Uniprot/homo-sapiens-swissprot.fasta'
+
+# opt$command = 'mapback-sites'
+# opt$files =  '~/Projects/HPCKrogan/Data/HIV-proteomics/results//20141124-ub-sites/HIV-UB-SILAC-KROGAN-results.txt'
+# opt$mapping =  '~/Projects/HPCKrogan/Data/HIV-proteomics/data/UB-silac/HIV-UB-SILAC-KROGAN-data-modK-mapping.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results//20141124-ub-sites/HIV-UB-SILAC-KROGAN-results.txt'
 
 main(opt)
