@@ -1,7 +1,7 @@
 #! /usr/bin/Rscript --vanilla
 
 suppressMessages(library(data.table))
-suppressMessages(library(seqinr))
+suppressWarnings(library(seqinr))
 suppressMessages(library(stringr))
 suppressMessages(require(bit64))
 suppressMessages(library(getopt))
@@ -86,7 +86,7 @@ MQutil.concat = function(filenames, output){
     if(!is.null(intersect(unique_files_current,unique_files)) && length(intersect(unique_files_current,unique_files))>0) cat(sprintf('\tWARNING DUPLICATE RAW FILE ENTRIES IN FILE %s:\t%s\n',file, paste(intersect(unique_files_current, unique_files),collapse=',')))
     select_colnames = grep('Raw\ file|Intensity|Proteins|Modifications|Sequence|Modified\ sequence|Charge|Protein\ group\ IDs|id|Retention\ time|Reverse|Contaminant',colnames(tmp), ignore.case = F)
     tmp = tmp[,select_colnames,with=F]
-    res = rbind(res, tmp)
+    res = rbind(res, tmp, fill=T)
     unique_files = c(unique_files, unique_files_current)  
   }
   
@@ -150,6 +150,7 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   
   ## read in maxq. data
   maxq_data = fread(maxq_file)
+  maxq_data = maxq_data[grep("CON__|REV__",maxq_data$Proteins, invert=T),]
   unique_peptides_in_data = unique(maxq_data[,c('Proteins','Modified sequence'),with=F])
   setnames(unique_peptides_in_data,'Modified sequence','sequence')
   
@@ -197,7 +198,7 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   }
   
   mod_site_mapping = data.table(mod_sites, mod_seqs)
-  mod_site_mapping_agg = aggregate(mod_sites ~ mod_seqs, mod_site_mapping, FUN=function(x)paste(x,collapse=','))
+  mod_site_mapping_agg = aggregate(mod_sites ~ mod_seqs, mod_site_mapping, FUN=function(x)paste(sort(unique(x)),collapse=','))
   
   setnames(maxq_data,'Modified sequence','mod_seqs')
   unmapped_mod_seqs = maxq_data[!(mod_seqs %in% mod_site_mapping_agg$mod_seqs) & grepl('(gl)',mod_seqs) & !grepl('REV__|CON__',Proteins),]
@@ -207,13 +208,16 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   
   final_data = merge(maxq_data, mod_site_mapping_agg, by='mod_seqs')
   setnames(final_data,c('Proteins','mod_sites','mod_seqs'),c('Proteins_ref','Proteins','Modified sequence'))
-  write.table(final_data, file = output_file, eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
+  write.table(unique(final_data), file = output_file, eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
   
   ## write a mapping table
   protein_seq_mapping = unique(maxq_data[,c('Proteins','mod_seqs'),with=F])
+  ## fix the protein names
+  protein_seq_mapping$Proteins = apply(protein_seq_mapping,1, function(x) paste(sort(unique(unlist(str_split(x[1],';')))), collapse=';'))
+  
   setnames(protein_seq_mapping,'Proteins','Protein')
   mapping_table = merge(protein_seq_mapping, mod_site_mapping_agg, by='mod_seqs', all=T)
-  write.table(mapping_table, file=gsub('.txt','-mapping.txt',output_file), eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
+  write.table(unique(mapping_table), file=gsub('.txt','-mapping.txt',output_file), eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
 }
 
 
@@ -239,7 +243,9 @@ MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot
   
   id_table_split = unique(data.table(group_id=ids_split, uniprot_ac=uniprot_acs_split))
   
-  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','uniprot_genename','description'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
+  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','description','entrezgene','hgnc_symbol'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
+  write.table(mart_anns, file=gsub('.txt','-annotation.txt',output_file), sep='\t', quote=F, row.names=F, col.names=T)
+  
   mart_anns = aggregate(. ~ uniprot_swissprot, data=mart_anns, FUN=function(x)paste(unique(x),collapse=','))
   setnames(mart_anns, 'uniprot_swissprot', 'uniprot_ac')
   
@@ -268,11 +274,51 @@ MQutil.mapSitesBack = function(input_file, mapping_file, output_file){
   input = fread(input_file)
   setnames(input,'Protein','mod_sites')
   mapping = fread(mapping_file)
-  mapping = unique(mapping[!is.na(mod_sites),c('Proteins','mod_sites'),with=F])
-  mapping = aggregate(Proteins ~ mod_sites, data=mapping, FUN=function(x)paste(x,collapse='T'))
+  mapping = unique(mapping[!is.na(mod_sites),c('Protein','mod_sites'),with=F])
+  mapping = aggregate(Protein ~ mod_sites, data=mapping, FUN=function(x)paste(x,collapse=';'))
   out = merge(input, mapping, by='mod_sites', all.x=T)
   write.table(out[,c(ncol(out),1:(ncol(out)-1)),with=F], file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
 }
+
+
+MQutil.plotHeat = function(input_file, output_file, labels=NULL, names='Protein', cluster_cols=F, display='log2FC'){
+  heat_data = fread(input_file)
+  #heat_data = mss_F[,c('uniprot_id','Label','log2FC')]
+  
+  ## good
+  if(display=='log2FC'){
+    heat_data_w = dcast(names ~ Label, data=heat_data, value.var='log2FC')  
+  }else if(display=='pvalue'){
+    heat_data$adj.pvalue = -log10(heat_data$adj.pvalue+10^-16)  
+    heat_data_w = dcast(names ~ Label, data=heat_data, value.var='adj.pvalue')  
+  }
+  
+  ## try
+  
+  #gene_names = uniprot_to_gene_replace(uniprot_ac=heat_data_w$Protein)
+  rownames(heat_data_w) = heat_data_w$names
+  heat_data_w = heat_data_w[,-1]
+  heat_data_w[is.na(heat_data_w)]=0
+  max_val = ceiling(max(heat_data_w))
+  min_val = floor(min(heat_data_w))
+  extreme_val = max(max_val, abs(min_val))
+  if(extreme_val %% 2 != 0) extreme_val=extreme_val+1
+  bin_size=2
+  signed_bins = (extreme_val/bin_size)
+  colors_neg = rev(colorRampPalette(brewer.pal("Blues",n=extreme_val/bin_size))(signed_bins))
+  colors_pos = colorRampPalette(brewer.pal("Reds",n=extreme_val/bin_size))(signed_bins)
+  colors_tot = c(colors_neg, colors_pos)
+  
+  if(is.null(labelOrder)){
+    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, filename =out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")  
+  }else{
+    heat_data_w = heat_data_w[,labelOrder]
+    pheatmap(heat_data_w, scale="none", cellheight=10, cellwidth=10, filename=out_file, color=colors_tot, breaks=seq(from=-extreme_val, to=extreme_val, by=bin_size), cluster_cols=cluster_cols, fontfamily="mono")
+  }
+  
+  heat_data_w
+}
+
 
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
@@ -300,13 +346,18 @@ main <- function(opt){
   }
 }
 
+# opt$command = 'heatmap'
+# opt$input = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Flu-human-exvivo/H5N1/ph//results//20141203//FLU-HUMAN-H5N1-PH-results.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Flu-human-exvivo/H5N1/ph//results//20141203//FLU-HUMAN-H5N1-PH-results.pdf'
+# opt$labels=NULL, names='Protein', cluster_cols=F, display='log2FC'
+
 # opt$command = 'results-wide'
 # opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
 
 # opt$command = 'annotate'
-# opt$input = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
-# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results/20141124-ub-proteins/HIV-UB-SILAC-KROGAN-results.txt'
+# opt$input = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-human-exvivo/H5N1/ph//results//20141214//FLU-HUMAN-H5N1-PH-results-mapped.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-human-exvivo/H5N1/ph//results//20141214//FLU-HUMAN-H5N1-PH-results-mapped-ann.txt'
 
 # opt$command = 'convert-silac'
 # opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence.txt'
@@ -323,8 +374,8 @@ main <- function(opt){
 # opt$proteome = '~/Projects/HPCKrogan/Data/Uniprot/homo-sapiens-swissprot.fasta'
 
 # opt$command = 'mapback-sites'
-# opt$files =  '~/Projects/HPCKrogan/Data/HIV-proteomics/results//20141124-ub-sites/HIV-UB-SILAC-KROGAN-results.txt'
-# opt$mapping =  '~/Projects/HPCKrogan/Data/HIV-proteomics/data/UB-silac/HIV-UB-SILAC-KROGAN-data-modK-mapping.txt'
-# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/results//20141124-ub-sites/HIV-UB-SILAC-KROGAN-results.txt'
+# opt$files =  '~/Projects/HPCKrogan/Data/TBLMSE/results/20141124-sites-eqmed-noint/TBLMSE-cox-ub-swissprot-modK-results.txt'
+# opt$mapping =  '~/Projects/HPCKrogan/Data/TBLMSE/data/swissprot/TBLMSE-cox-ub-swissprot-modK-mapping.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/TBLMSE/results/20141124-sites-eqmed-noint/TBLMSE-cox-ub-swissprot-modK-results.txt'
 
 main(opt)
