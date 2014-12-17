@@ -181,7 +181,7 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
             residues_before_site = str_count(string = peptide_seq_before_site, pattern = 'A|C|D|E|F|G|H|I|K|L|M|N|P|Q|R|S|T|V|W|Y')
             mod_site_index_in_protein = peptide_index_in_protein+residues_before_site
             protein_mod_sites = protein_indices[uniprot_ac==uac,]
-            if(mod_site_index_in_protein %in% protein_mod_sites$res_index){
+            if(!is.na(mod_site_index_in_protein)){
               #cat(sprintf('%s\n',mod_site_id))
               mod_res = protein_mod_sites[res_index==mod_site_index_in_protein,ptm_site]
               mod_site_id = sprintf('%s_%s%s', uac, str_sub(protein_seq,mod_site_index_in_protein,mod_site_index_in_protein), mod_site_index_in_protein)
@@ -198,7 +198,7 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   }
   
   mod_site_mapping = data.table(mod_sites, mod_seqs)
-  mod_site_mapping_agg = aggregate(mod_sites ~ mod_seqs, mod_site_mapping, FUN=function(x)paste(sort(unique(x)),collapse=','))
+  mod_site_mapping_agg = aggregate(mod_sites ~ mod_seqs, mod_site_mapping, FUN=function(x)paste(x,collapse=','))
   
   setnames(maxq_data,'Modified sequence','mod_seqs')
   unmapped_mod_seqs = maxq_data[!(mod_seqs %in% mod_site_mapping_agg$mod_seqs) & grepl('(gl)',mod_seqs) & !grepl('REV__|CON__',Proteins),]
@@ -208,16 +208,13 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   
   final_data = merge(maxq_data, mod_site_mapping_agg, by='mod_seqs')
   setnames(final_data,c('Proteins','mod_sites','mod_seqs'),c('Proteins_ref','Proteins','Modified sequence'))
-  write.table(unique(final_data), file = output_file, eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
+  write.table(final_data, file = output_file, eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
   
   ## write a mapping table
   protein_seq_mapping = unique(maxq_data[,c('Proteins','mod_seqs'),with=F])
-  ## fix the protein names
-  protein_seq_mapping$Proteins = apply(protein_seq_mapping,1, function(x) paste(sort(unique(unlist(str_split(x[1],';')))), collapse=';'))
-  
   setnames(protein_seq_mapping,'Proteins','Protein')
   mapping_table = merge(protein_seq_mapping, mod_site_mapping_agg, by='mod_seqs', all=T)
-  write.table(unique(mapping_table), file=gsub('.txt','-mapping.txt',output_file), eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
+  write.table(mapping_table, file=gsub('.txt','-mapping.txt',output_file), eol='\n', sep='\t',quote=F, row.names=F, col.names=T)
 }
 
 
@@ -243,7 +240,7 @@ MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot
   
   id_table_split = unique(data.table(group_id=ids_split, uniprot_ac=uniprot_acs_split))
   
-  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','description','entrezgene','hgnc_symbol'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
+  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','description','entrezgene','uniprot_genename'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
   write.table(mart_anns, file=gsub('.txt','-annotation.txt',output_file), sep='\t', quote=F, row.names=F, col.names=T)
   
   mart_anns = aggregate(. ~ uniprot_swissprot, data=mart_anns, FUN=function(x)paste(unique(x),collapse=','))
@@ -372,6 +369,12 @@ main <- function(opt){
 # opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/data//UB-silac//HIV-UB-SILAC-KROGAN-data-modK.txt'
 # opt$mod_type = 'ub'
 # opt$proteome = '~/Projects/HPCKrogan/Data/Uniprot/homo-sapiens-swissprot.fasta'
+
+# opt$command = 'convert-sites'
+# opt$files =  '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/Pilot/Mouse-H5N1-Ph//data//FLU-MOUSE-H5N1-PH-PILOT-data.txt' 
+# opt$output =  '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/Pilot/Mouse-H5N1-Ph//data//FLU-MOUSE-H5N1-PH-PILOT-data-modSTY.txt'
+# opt$mod_type = 'ph'
+# opt$proteome = '~/Projects/HPCKrogan/Data/Uniprot/mus-musculus-uniprot.fasta'
 
 # opt$command = 'mapback-sites'
 # opt$files =  '~/Projects/HPCKrogan/Data/TBLMSE/results/20141124-sites-eqmed-noint/TBLMSE-cox-ub-swissprot-modK-results.txt'
