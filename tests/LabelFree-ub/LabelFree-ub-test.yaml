@@ -1,9 +1,10 @@
 files :
-  keys : /data1/soft/HPC/RMSQ/tests/LabelFree-ub/data/LabelFree-ub-evidence-keys.txt
-  data : /data1/soft/HPC/RMSQ/tests/LabelFree-ub/data/LabelFree-ub-evidence-sample.txt
-  contrasts : /data1/soft/HPC/RMSQ/tests/LabelFree-ub/data/LabelFree-ub-evidence-contrasts.txt
-  output : /data1/soft/HPC/RMSQ/tests/LabelFree-ub/data/LabelFree-ub-evidence-results.txt
+  keys : ../tests/LabelFree-ub/data/LabelFree-ub-evidence-keys.txt
+  data : ../tests/LabelFree-ub/data/LabelFree-ub-evidence-sample.txt
+  contrasts : ../tests/LabelFree-ub/data/LabelFree-ub-evidence-contrasts.txt
+  output : ../tests/LabelFree-ub/results/keepgroups-imputed/LabelFree-ub-evidence-results.txt
   sequence_type : modified # unmodified, modified
+  sample_plots : 1
 data:
   enabled : 1
 aggregation: 
@@ -17,8 +18,8 @@ filters:
 msstats :
   enabled : 1
   msstats_input : 
-  version : /data1/soft/HPC/MSstats.dev/MSstats.daily/R/
-  profilePlots : before-after # before, after, before-after, none
+  version : ~/Code/MSstats.dev/MSstats.daily/R/
+  profilePlots : none # before, after, before-after, none
   normalization_method : globalStandards # globalStandards, equalizeMedians, quantile, 0
   normalization_reference : P04406 #should be a value in the Protein column
   missing_action : impute # impute, nointeraction, remove (hidden: impute-conditions, impute-byfeature)
