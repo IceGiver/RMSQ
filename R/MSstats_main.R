@@ -312,15 +312,8 @@ if ( !is.null(opt$help) ) {
   q(status=1);
 }
 
-#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/abundance/RMSQ_template.yml')
-#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/ub-LF/MKL-1-22.yml')
-#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/phospho-rad53/Rad53.yml')
-#opt = c(opt, config='~/Projects/HPCKrogan/Data/Mtb/UB/TBLMSE-UB.yml')
-#opt = c(opt, config='~/Projects/HPCKrogan/Data/Meena/ub-SILAC/RMSQ_template.yml')
-#opt = c(opt, config='~/Projects/HPCKrogan/Data/HIV-Guatelli/results/20140922/MKL-1-22.yml')
-
 ## TEST WORKS WITH LATEST CODE
-# opt = c(opt, config='~/Code/MSstats.dev/Tests/LabelFree-ub//LabelFree-ub-test.yaml')
+opt = c(opt, config='tests/LabelFree-ub/LabelFree-ub-test.yaml')
 
 RUNMODE='RUN'
 main(opt)
