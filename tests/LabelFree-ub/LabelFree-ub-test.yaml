@@ -1,8 +1,8 @@
 files :
-  keys : ../tests/LabelFree-ub/data/LabelFree-ub-evidence-keys.txt
-  data : ../tests/LabelFree-ub/data/LabelFree-ub-evidence-sample.txt
-  contrasts : ../tests/LabelFree-ub/data/LabelFree-ub-evidence-contrasts.txt
-  output : ../tests/LabelFree-ub/results/keepgroups-imputed/LabelFree-ub-evidence-results.txt
+  keys : data/LabelFree-ub-evidence-keys.txt
+  data : data/LabelFree-ub-evidence-sample.txt
+  contrasts : data/LabelFree-ub-evidence-contrasts.txt
+  output : results/keepgroups-imputed/LabelFree-ub-evidence-results.txt
   sequence_type : modified # unmodified, modified
   sample_plots : 1
 data:

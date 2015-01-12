@@ -1,0 +1,193 @@
+uniprot_swissprot	description	entrezgene	uniprot_genename
+O00148	DEAD (Asp-Glu-Ala-Asp) box polypeptide 39A [Source:HGNC Symbol;Acc:HGNC:17821]	10212	DDX39A;
+O00148	DEAD (Asp-Glu-Ala-Asp) box polypeptide 39A [Source:HGNC Symbol;Acc:HGNC:17821]	10212	DDX39
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	10528	NOP56;
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	26792	NOP56;
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	26793	NOP56;
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	692201	NOP56;
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	692213	NOP56;
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	100302138	NOP56;
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	10528	NOP56
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	26792	NOP56
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	26793	NOP56
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	692201	NOP56
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	692213	NOP56
+O00567	NOP56 ribonucleoprotein [Source:HGNC Symbol;Acc:HGNC:15911]	100302138	NOP56
+O00571	DEAD (Asp-Glu-Ala-Asp) box helicase 3, X-linked [Source:HGNC Symbol;Acc:HGNC:2745]	1654	DDX3X;
+O00571	DEAD (Asp-Glu-Ala-Asp) box helicase 3, X-linked [Source:HGNC Symbol;Acc:HGNC:2745]	1654	DDX3X
+O14965	aurora kinase A [Source:HGNC Symbol;Acc:HGNC:11393]	6790	AURKA;
+O15126	secretory carrier membrane protein 1 [Source:HGNC Symbol;Acc:HGNC:10563]	9522	SCAMP1;
+O15523	DEAD (Asp-Glu-Ala-Asp) box helicase 3, Y-linked [Source:HGNC Symbol;Acc:HGNC:2699]	8653	DDX3Y;
+O15523	DEAD (Asp-Glu-Ala-Asp) box helicase 3, Y-linked [Source:HGNC Symbol;Acc:HGNC:2699]	8653	DDX3Y
+O60506	synaptotagmin binding, cytoplasmic RNA interacting protein [Source:HGNC Symbol;Acc:HGNC:16918]	10492	SYNCRIP;
+O60506	synaptotagmin binding, cytoplasmic RNA interacting protein [Source:HGNC Symbol;Acc:HGNC:16918]	10492	SYNCRIP
+O60814	histone cluster 1, H2bk [Source:HGNC Symbol;Acc:HGNC:13954]	85236	HIST1H2BK;
+O60814	histone cluster 1, H2bk [Source:HGNC Symbol;Acc:HGNC:13954]	85236	HIST1H2BK
+O75396	SEC22 vesicle trafficking protein homolog B (S. cerevisiae) (gene/pseudogene) [Source:HGNC Symbol;Acc:HGNC:10700]	9554	SEC22B;
+O75396	SEC22 vesicle trafficking protein homolog B (S. cerevisiae) (gene/pseudogene) [Source:HGNC Symbol;Acc:HGNC:10700]	9554	SEC22B
+O96008	translocase of outer mitochondrial membrane 40 homolog (yeast) [Source:HGNC Symbol;Acc:HGNC:18001]	10452	TOMM40;
+O96008	translocase of outer mitochondrial membrane 40 homolog (yeast) [Source:HGNC Symbol;Acc:HGNC:18001]	10452	TOMM40
+P04406	glyceraldehyde-3-phosphate dehydrogenase [Source:HGNC Symbol;Acc:HGNC:4141]	2597	GAPDH;
+P04406	glyceraldehyde-3-phosphate dehydrogenase [Source:HGNC Symbol;Acc:HGNC:4141]	2597	HEL-S-162EP
+P04406	glyceraldehyde-3-phosphate dehydrogenase [Source:HGNC Symbol;Acc:HGNC:4141]	2597	GAPDH
+P04406	glyceraldehyde-3-phosphate dehydrogenase [Source:HGNC Symbol;Acc:HGNC:4141]	2597	GAPD
+P05198	eukaryotic translation initiation factor 2, subunit 1 alpha, 35kDa [Source:HGNC Symbol;Acc:HGNC:3265]	1965	EIF2S1;
+P05198	eukaryotic translation initiation factor 2, subunit 1 alpha, 35kDa [Source:HGNC Symbol;Acc:HGNC:3265]	1965	EIF2S1
+P05387	ribosomal protein, large, P2 [Source:HGNC Symbol;Acc:HGNC:10377]	6181	RPLP2;
+P05387	ribosomal protein, large, P2 [Source:HGNC Symbol;Acc:HGNC:10377]	619565	RPLP2;
+P05387	ribosomal protein, large, P2 [Source:HGNC Symbol;Acc:HGNC:10377]	6181	RPLP2
+P05387	ribosomal protein, large, P2 [Source:HGNC Symbol;Acc:HGNC:10377]	619565	RPLP2
+P06733	enolase 1, (alpha) [Source:HGNC Symbol;Acc:HGNC:3350]	2023	ENO1;
+P06733	enolase 1, (alpha) [Source:HGNC Symbol;Acc:HGNC:3350]	2023	ENO1
+P06744	glucose-6-phosphate isomerase [Source:HGNC Symbol;Acc:HGNC:4458]	2821	GPI;
+P07195	lactate dehydrogenase B [Source:HGNC Symbol;Acc:HGNC:6541]	3945	LDHB;
+P07195	lactate dehydrogenase B [Source:HGNC Symbol;Acc:HGNC:6541]	3945	LDHB
+P08107	heat shock 70kDa protein 1B [Source:HGNC Symbol;Acc:HGNC:5233]	3304	HSPA1A;
+P08107	heat shock 70kDa protein 1B [Source:HGNC Symbol;Acc:HGNC:5233]	3304	HEL-S-103
+P08107	heat shock 70kDa protein 1A [Source:HGNC Symbol;Acc:HGNC:5232]	3303	HSPA1A;
+P08107	heat shock 70kDa protein 1A [Source:HGNC Symbol;Acc:HGNC:5232]	3303	HEL-S-103
+P10412	histone cluster 1, H1e [Source:HGNC Symbol;Acc:HGNC:4718]	3008	HIST1H1E;
+P10412	histone cluster 1, H1e [Source:HGNC Symbol;Acc:HGNC:4718]	3008	HIST1H1E
+P10809	heat shock 60kDa protein 1 (chaperonin) [Source:HGNC Symbol;Acc:HGNC:5261]	3329	HSPD1;
+P10809	heat shock 60kDa protein 1 (chaperonin) [Source:HGNC Symbol;Acc:HGNC:5261]	3329	HSPD1
+P11766	alcohol dehydrogenase 5 (class III), chi polypeptide [Source:HGNC Symbol;Acc:HGNC:253]	128	ADH5;
+P11766	alcohol dehydrogenase 5 (class III), chi polypeptide [Source:HGNC Symbol;Acc:HGNC:253]	128	ADH5
+P13010	X-ray repair complementing defective repair in Chinese hamster cells 5 (double-strand-break rejoining) [Source:HGNC Symbol;Acc:HGNC:12833]	7520	XRCC5;
+P13010	X-ray repair complementing defective repair in Chinese hamster cells 5 (double-strand-break rejoining) [Source:HGNC Symbol;Acc:HGNC:12833]	7520	XRCC5
+P13797	plastin 3 [Source:HGNC Symbol;Acc:HGNC:9091]	5358	PLS3;
+P15104	glutamate-ammonia ligase [Source:HGNC Symbol;Acc:HGNC:4341]	2752	GLUL;
+P15104	glutamate-ammonia ligase [Source:HGNC Symbol;Acc:HGNC:4341]	2752	PIG59
+P19338	nucleolin [Source:HGNC Symbol;Acc:HGNC:7667]	4691	NCL;
+P19338	nucleolin [Source:HGNC Symbol;Acc:HGNC:7667]	4691	NCL
+P20042	eukaryotic translation initiation factor 2, subunit 2 beta, 38kDa [Source:HGNC Symbol;Acc:HGNC:3266]	8894	EIF2S2;
+P20042	eukaryotic translation initiation factor 2, subunit 2 beta, 38kDa [Source:HGNC Symbol;Acc:HGNC:3266]	8894	EIF2S2
+P22102	phosphoribosylglycinamide formyltransferase, phosphoribosylglycinamide synthetase, phosphoribosylaminoimidazole synthetase [Source:HGNC Symbol;Acc:HGNC:4163]	2618	GART;
+P22102	phosphoribosylglycinamide formyltransferase, phosphoribosylglycinamide synthetase, phosphoribosylaminoimidazole synthetase [Source:HGNC Symbol;Acc:HGNC:4163]	2618	GART
+P22626	heterogeneous nuclear ribonucleoprotein A2/B1 [Source:HGNC Symbol;Acc:HGNC:5033]	3181	HNRNPA2B1;
+P22626	heterogeneous nuclear ribonucleoprotein A2/B1 [Source:HGNC Symbol;Acc:HGNC:5033]	3181	HNRPA2B1
+P23527	histone cluster 1, H2bo [Source:HGNC Symbol;Acc:HGNC:4758]	8348	HIST1H2BO;
+P24928	polymerase (RNA) II (DNA directed) polypeptide A, 220kDa [Source:HGNC Symbol;Acc:HGNC:9187]	5430	POLR2A;
+P24928	polymerase (RNA) II (DNA directed) polypeptide A, 220kDa [Source:HGNC Symbol;Acc:HGNC:9187]	102723646	POLR2A;
+P26583	high mobility group box 2 [Source:HGNC Symbol;Acc:HGNC:5000]	3148	HMGB2;
+P27635	ribosomal protein L10 [Source:HGNC Symbol;Acc:HGNC:10298]	6134	RPL10;
+P27635	ribosomal protein L10 [Source:HGNC Symbol;Acc:HGNC:10298]	26778	RPL10;
+P27635	ribosomal protein L10 [Source:HGNC Symbol;Acc:HGNC:10298]	6134	RPL10
+P27635	ribosomal protein L10 [Source:HGNC Symbol;Acc:HGNC:10298]	26778	RPL10
+P27708	carbamoyl-phosphate synthetase 2, aspartate transcarbamylase, and dihydroorotase [Source:HGNC Symbol;Acc:HGNC:1424]	790	CAD;
+P27708	carbamoyl-phosphate synthetase 2, aspartate transcarbamylase, and dihydroorotase [Source:HGNC Symbol;Acc:HGNC:1424]	790	CAD
+P29966	myristoylated alanine-rich protein kinase C substrate [Source:HGNC Symbol;Acc:HGNC:6759]	4082	MARCKS;
+P29966	myristoylated alanine-rich protein kinase C substrate [Source:HGNC Symbol;Acc:HGNC:6759]	4082	MARCKS
+P32969	ribosomal protein L9 [Source:HGNC Symbol;Acc:HGNC:10369]	6133	RPL9;
+P32969	ribosomal protein L9 [Source:HGNC Symbol;Acc:HGNC:10369]	6133	RPL9
+P33778	histone cluster 1, H2bb [Source:HGNC Symbol;Acc:HGNC:4751]	3018	HIST1H2BB;
+P33993	minichromosome maintenance complex component 7 [Source:HGNC Symbol;Acc:HGNC:6950]	4176	MCM7;
+P38159	RNA binding motif protein, X-linked [Source:HGNC Symbol;Acc:HGNC:9910]	26787	RBMX;
+P38159	RNA binding motif protein, X-linked [Source:HGNC Symbol;Acc:HGNC:9910]	27316	RBMX;
+P38159	RNA binding motif protein, X-linked [Source:HGNC Symbol;Acc:HGNC:9910]	101928747	RBMX;
+P41440	solute carrier family 19 (folate transporter), member 1 [Source:HGNC Symbol;Acc:HGNC:10937]	6573	SLC19A1;
+P41440	solute carrier family 19 (folate transporter), member 1 [Source:HGNC Symbol;Acc:HGNC:10937]	101928717	SLC19A1;
+P41440	solute carrier family 19 (folate transporter), member 1 [Source:HGNC Symbol;Acc:HGNC:10937]	6573	SLC19A1
+P41440	solute carrier family 19 (folate transporter), member 1 [Source:HGNC Symbol;Acc:HGNC:10937]	101928717	SLC19A1
+P43243	matrin 3 [Source:HGNC Symbol;Acc:HGNC:6912]	9782	MATR3;
+P43243	matrin 3 [Source:HGNC Symbol;Acc:HGNC:6912]	724102	MATR3;
+P43243	matrin 3 [Source:HGNC Symbol;Acc:HGNC:6912]	9782	DKFZP686L22104
+P43243	matrin 3 [Source:HGNC Symbol;Acc:HGNC:6912]	724102	DKFZP686L22104
+P43243	matrin 3 [Source:HGNC Symbol;Acc:HGNC:6912]	9782	MATR3
+P43243	matrin 3 [Source:HGNC Symbol;Acc:HGNC:6912]	724102	MATR3
+P46777	ribosomal protein L5 [Source:HGNC Symbol;Acc:HGNC:10360]	6083	RPL5;
+P46777	ribosomal protein L5 [Source:HGNC Symbol;Acc:HGNC:10360]	6125	RPL5;
+P46777	ribosomal protein L5 [Source:HGNC Symbol;Acc:HGNC:10360]	6083	RPL5
+P46777	ribosomal protein L5 [Source:HGNC Symbol;Acc:HGNC:10360]	6125	RPL5
+P46778	ribosomal protein L21 [Source:HGNC Symbol;Acc:HGNC:10313]	6144	RPL21;
+P46778	ribosomal protein L21 [Source:HGNC Symbol;Acc:HGNC:10313]	26771	RPL21;
+P46778	ribosomal protein L21 [Source:HGNC Symbol;Acc:HGNC:10313]	619499	RPL21;
+P46778	ribosomal protein L21 [Source:HGNC Symbol;Acc:HGNC:10313]	6144	RPL21
+P46778	ribosomal protein L21 [Source:HGNC Symbol;Acc:HGNC:10313]	26771	RPL21
+P46778	ribosomal protein L21 [Source:HGNC Symbol;Acc:HGNC:10313]	619499	RPL21
+P46940	IQ motif containing GTPase activating protein 1 [Source:HGNC Symbol;Acc:HGNC:6110]	8826	IQGAP1;
+P48556	proteasome (prosome, macropain) 26S subunit, non-ATPase, 8 [Source:HGNC Symbol;Acc:HGNC:9566]	5714	PSMD8;
+P48556	proteasome (prosome, macropain) 26S subunit, non-ATPase, 8 [Source:HGNC Symbol;Acc:HGNC:9566]	5714	HEL-S-91N
+P51610	host cell factor C1 [Source:HGNC Symbol;Acc:HGNC:4839]	3054	HCFC1;
+P51610	host cell factor C1 [Source:HGNC Symbol;Acc:HGNC:4839]	3054	HCFC1
+P52701	mutS homolog 6 [Source:HGNC Symbol;Acc:HGNC:7329]	2956	MSH6;
+P53621	coatomer protein complex, subunit alpha [Source:HGNC Symbol;Acc:HGNC:2230]	1314	COPA;
+P55036	proteasome (prosome, macropain) 26S subunit, non-ATPase, 4 [Source:HGNC Symbol;Acc:HGNC:9561]	5710	PSMD4;
+P55036	proteasome (prosome, macropain) 26S subunit, non-ATPase, 4 [Source:HGNC Symbol;Acc:HGNC:9561]	5710	PSMD4
+P55265	adenosine deaminase, RNA-specific [Source:HGNC Symbol;Acc:HGNC:225]	102724045	ADAR;
+P55265	adenosine deaminase, RNA-specific [Source:HGNC Symbol;Acc:HGNC:225]	103	ADAR;
+P55265	adenosine deaminase, RNA-specific [Source:HGNC Symbol;Acc:HGNC:225]	102724045	ADAR
+P55265	adenosine deaminase, RNA-specific [Source:HGNC Symbol;Acc:HGNC:225]	103	ADAR
+P57053	H2B histone family, member S (pseudogene) [Source:HGNC Symbol;Acc:HGNC:4762]	85236	H2BFS;
+P57053	H2B histone family, member S (pseudogene) [Source:HGNC Symbol;Acc:HGNC:4762]	102724334	H2BFS;
+P58876	histone cluster 1, H2bd [Source:HGNC Symbol;Acc:HGNC:4747]	3017	HIST1H2BD;
+P58876	histone cluster 1, H2bd [Source:HGNC Symbol;Acc:HGNC:4747]	3017	HIST1H2BD
+P61978	heterogeneous nuclear ribonucleoprotein K [Source:HGNC Symbol;Acc:HGNC:5044]	3190	HNRNPK;
+P61978	heterogeneous nuclear ribonucleoprotein K [Source:HGNC Symbol;Acc:HGNC:5044]	3190	HNRPK
+P62807	histone cluster 1, H2bg [Source:HGNC Symbol;Acc:HGNC:4746]	8339	HIST1H2BC;
+P62807	histone cluster 1, H2bg [Source:HGNC Symbol;Acc:HGNC:4746]	8339	HIST1H2BC
+P62807	histone cluster 1, H2bf [Source:HGNC Symbol;Acc:HGNC:4752]	8343	HIST1H2BC;
+P62807	histone cluster 1, H2bf [Source:HGNC Symbol;Acc:HGNC:4752]	8343	HIST1H2BC
+P62807	histone cluster 1, H2be [Source:HGNC Symbol;Acc:HGNC:4753]	8344	HIST1H2BC;
+P62807	histone cluster 1, H2be [Source:HGNC Symbol;Acc:HGNC:4753]	8344	HIST1H2BC
+P62807	histone cluster 1, H2bc [Source:HGNC Symbol;Acc:HGNC:4757]	8347	HIST1H2BC;
+P62807	histone cluster 1, H2bc [Source:HGNC Symbol;Acc:HGNC:4757]	8347	HIST1H2BC
+P62937	peptidylprolyl isomerase A (cyclophilin A) [Source:HGNC Symbol;Acc:HGNC:9253]	5478	PPIA;
+P62937	peptidylprolyl isomerase A (cyclophilin A) [Source:HGNC Symbol;Acc:HGNC:9253]	101060363	PPIA;
+P62937	peptidylprolyl isomerase A (cyclophilin A) [Source:HGNC Symbol;Acc:HGNC:9253]	5478	HEL-S-69P
+P62937	peptidylprolyl isomerase A (cyclophilin A) [Source:HGNC Symbol;Acc:HGNC:9253]	101060363	HEL-S-69P
+P63241	eukaryotic translation initiation factor 5A [Source:HGNC Symbol;Acc:HGNC:3300]	1984	EIF5A;
+P63244	guanine nucleotide binding protein (G protein), beta polypeptide 2-like 1 [Source:HGNC Symbol;Acc:HGNC:4399]	10399	GNB2L1;
+P63244	guanine nucleotide binding protein (G protein), beta polypeptide 2-like 1 [Source:HGNC Symbol;Acc:HGNC:4399]	619570	GNB2L1;
+P63244	guanine nucleotide binding protein (G protein), beta polypeptide 2-like 1 [Source:HGNC Symbol;Acc:HGNC:4399]	619571	GNB2L1;
+P68104	eukaryotic translation elongation factor 1 alpha 1 [Source:HGNC Symbol;Acc:HGNC:3189]	102724204	EEF1A1;
+P68104	eukaryotic translation elongation factor 1 alpha 1 [Source:HGNC Symbol;Acc:HGNC:3189]	1915	EEF1A1;
+P68104	eukaryotic translation elongation factor 1 alpha 1 [Source:HGNC Symbol;Acc:HGNC:3189]	102724204	EEF1A1
+P68104	eukaryotic translation elongation factor 1 alpha 1 [Source:HGNC Symbol;Acc:HGNC:3189]	1915	EEF1A1
+Q05639	eukaryotic translation elongation factor 1 alpha 2 [Source:HGNC Symbol;Acc:HGNC:3192]	1917	EEF1A2;
+Q07955	serine/arginine-rich splicing factor 1 [Source:HGNC Symbol;Acc:HGNC:10780]	6426	SRSF1;
+Q07955	serine/arginine-rich splicing factor 1 [Source:HGNC Symbol;Acc:HGNC:10780]	6426	SRSF1
+Q12834	cell division cycle 20 [Source:HGNC Symbol;Acc:HGNC:1723]	991	CDC20;
+Q13838	DEAD (Asp-Glu-Ala-Asp) box polypeptide 39B [Source:HGNC Symbol;Acc:HGNC:13917]	7919	DDX39B;
+Q13838	DEAD (Asp-Glu-Ala-Asp) box polypeptide 39B [Source:HGNC Symbol;Acc:HGNC:13917]	692199	DDX39B;
+Q13838	DEAD (Asp-Glu-Ala-Asp) box polypeptide 39B [Source:HGNC Symbol;Acc:HGNC:13917]	7919	BAT1
+Q13838	DEAD (Asp-Glu-Ala-Asp) box polypeptide 39B [Source:HGNC Symbol;Acc:HGNC:13917]	692199	BAT1
+Q14677	clathrin interactor 1 [Source:HGNC Symbol;Acc:HGNC:23186]	9685	CLINT1;
+Q15154	pericentriolar material 1 [Source:HGNC Symbol;Acc:HGNC:8727]	5108	PCM1;
+Q15154	pericentriolar material 1 [Source:HGNC Symbol;Acc:HGNC:8727]	5108	PCM1
+Q16186	adhesion regulating molecule 1 [Source:HGNC Symbol;Acc:HGNC:15759]	11047	ADRM1;
+Q5QNW6	histone cluster 2, H2bf [Source:HGNC Symbol;Acc:HGNC:24700]	440689	HIST2H2BF;
+Q5VW36	focadhesin [Source:HGNC Symbol;Acc:HGNC:23377]	54914	FOCAD;
+Q6IS14	eukaryotic translation initiation factor 5A-like 1 [Source:HGNC Symbol;Acc:HGNC:17419]	143244	EIF5AL1;
+Q6UX07	dehydrogenase/reductase (SDR family) member 13 [Source:HGNC Symbol;Acc:HGNC:28326]	147015	DHRS13;
+Q6UX07	dehydrogenase/reductase (SDR family) member 13 [Source:HGNC Symbol;Acc:HGNC:28326]	147015	DHRS13
+Q6ZMK1	cysteine/histidine-rich 1 [Source:HGNC Symbol;Acc:HGNC:17806]	50626	CYHR1;
+Q7KZF4	staphylococcal nuclease and tudor domain containing 1 [Source:HGNC Symbol;Acc:HGNC:30646]	27044	SND1;
+Q86V59	paraneoplastic Ma antigen family-like 1 [Source:HGNC Symbol;Acc:HGNC:25578]	55228	PNMAL1;
+Q8IX01	SURP and G patch domain containing 2 [Source:HGNC Symbol;Acc:HGNC:18641]	10147	SUGP2;
+Q8N0X7	spastic paraplegia 20 (Troyer syndrome) [Source:HGNC Symbol;Acc:HGNC:18514]	23111	SPG20;
+Q8N0X7	spastic paraplegia 20 (Troyer syndrome) [Source:HGNC Symbol;Acc:HGNC:18514]	23111	SPG20
+Q8N257	histone cluster 3, H2bb [Source:HGNC Symbol;Acc:HGNC:20514]	128312	HIST3H2BB;
+Q8WUM4	programmed cell death 6 interacting protein [Source:HGNC Symbol;Acc:HGNC:8766]	10015	PDCD6IP;
+Q8WYP5	AT hook containing transcription factor 1 [Source:HGNC Symbol;Acc:HGNC:24618]	25909	AHCTF1;
+Q92522	H1 histone family, member X [Source:HGNC Symbol;Acc:HGNC:4722]	8971	H1FX;
+Q92616	GCN1 general control of amino-acid synthesis 1-like 1 (yeast) [Source:HGNC Symbol;Acc:HGNC:4199]	10985	GCN1L1;
+Q93079	histone cluster 1, H2bh [Source:HGNC Symbol;Acc:HGNC:4755]	8345	HIST1H2BH;
+Q96GD4	aurora kinase B [Source:HGNC Symbol;Acc:HGNC:11390]	9212	AURKB;
+Q96L21	ribosomal protein L10-like [Source:HGNC Symbol;Acc:HGNC:17976]	140801	RPL10L;
+Q99623	prohibitin 2 [Source:HGNC Symbol;Acc:HGNC:30306]	11331	PHB2
+Q99877	histone cluster 1, H2bn [Source:HGNC Symbol;Acc:HGNC:4749]	8330	HIST1H2BN;
+Q99877	histone cluster 1, H2bn [Source:HGNC Symbol;Acc:HGNC:4749]	8341	HIST1H2BN;
+Q99877	histone cluster 1, H2bn [Source:HGNC Symbol;Acc:HGNC:4749]	8330	HIST1H2BN
+Q99877	histone cluster 1, H2bn [Source:HGNC Symbol;Acc:HGNC:4749]	8341	HIST1H2BN
+Q99879	histone cluster 1, H2bm [Source:HGNC Symbol;Acc:HGNC:4750]	8342	HIST1H2BM;
+Q99879	histone cluster 1, H2bm [Source:HGNC Symbol;Acc:HGNC:4750]	8342	HIST1H2BM
+Q99880	histone cluster 1, H2bl [Source:HGNC Symbol;Acc:HGNC:4748]	8340	HIST1H2BL;
+Q9BYK8	helicase with zinc finger 2, transcriptional coactivator [Source:HGNC Symbol;Acc:HGNC:30021]	85441	HELZ2;
+Q9BYK8	helicase with zinc finger 2, transcriptional coactivator [Source:HGNC Symbol;Acc:HGNC:30021]	85441	PDIP1BETA
+Q9GZV4	eukaryotic translation initiation factor 5A2 [Source:HGNC Symbol;Acc:HGNC:3301]	56648	EIF5A2;
+Q9H9A6	leucine rich repeat containing 40 [Source:HGNC Symbol;Acc:HGNC:26004]	55631	LRRC40;
+Q9NRW7	vacuolar protein sorting 45 homolog (S. cerevisiae) [Source:HGNC Symbol;Acc:HGNC:14579]	11311	VPS45;
+Q9NRW7	vacuolar protein sorting 45 homolog (S. cerevisiae) [Source:HGNC Symbol;Acc:HGNC:14579]	11311	VPS45
+Q9NVM9	asunder spermatogenesis regulator [Source:HGNC Symbol;Acc:HGNC:20174]	55726	ASUN;
+Q9NZJ4	sacsin molecular chaperone [Source:HGNC Symbol;Acc:HGNC:10519]	26278	SACS;
+Q9UBI6	guanine nucleotide binding protein (G protein), gamma 12 [Source:HGNC Symbol;Acc:HGNC:19663]	55970	GNG12;

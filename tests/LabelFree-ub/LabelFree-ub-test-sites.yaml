@@ -1,0 +1,41 @@
+files :
+  keys : data/LabelFree-ub-evidence-keys.txt
+  data : data/LabelFree-ub-evidence-sample-modK.txt
+  contrasts : data/LabelFree-ub-evidence-contrasts.txt
+  output : results/keepgroups-imputed/LabelFree-ub-evidence-results-modK.txt
+  sequence_type : modified # unmodified, modified
+  sample_plots : 1
+data:
+  enabled : 1
+aggregation: 
+  enabled : 0
+  aggregate_fun : sum
+filters: 
+  enabled : 1
+  contaminants : 1
+  protein_groups : remove #remove, explode, ignore
+  modifications : UB #or empty
+msstats :
+  enabled : 1
+  msstats_input : 
+  version : ~/Code/MSstats.dev/MSstats.daily/R/
+  profilePlots : none # before, after, before-after, none
+  normalization_method : globalStandards # globalStandards, equalizeMedians, quantile, 0
+  normalization_reference : P04406 #should be a value in the Protein column
+  missing_action : impute # impute, nointeraction, remove (hidden: impute-conditions, impute-byfeature)
+  interference : 0 # 0/1
+  scopeOfTechReplication : restricted # expanded, restricted
+  scopeOfBioReplication : restricted # expanded, restricted
+  equalFeatureVar : 0 # 0/1
+  labeled : 0 # 0/1
+output_extras :
+  enabled : 1
+  msstats_output : 
+  biomart : 1
+  comparisons : all # or any grep expression that returns a subset of the contrasts file
+  LFC : -Inf 2
+  FDR : 0.05
+  heatmap : 1 
+  heatmap_cluster_cols : 0
+  heatmap_display : log2FC #or pvalue
+  volcano : 1
