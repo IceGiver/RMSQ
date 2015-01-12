@@ -313,7 +313,7 @@ if ( !is.null(opt$help) ) {
 }
 
 ## TEST WORKS WITH LATEST CODE
-opt = c(opt, config='tests/LabelFree-ub/LabelFree-ub-test.yaml')
+# opt = c(opt, config='tests/LabelFree-ub/LabelFree-ub-test.yaml')
 
 RUNMODE='RUN'
 main(opt)
