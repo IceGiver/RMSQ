@@ -240,14 +240,14 @@ MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot
   
   id_table_split = unique(data.table(group_id=ids_split, uniprot_ac=uniprot_acs_split))
   
-  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','description','entrezgene','uniprot_genename'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
+  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','entrezgene','uniprot_genename','description'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
   write.table(mart_anns, file=gsub('.txt','-annotation.txt',output_file), sep='\t', quote=F, row.names=F, col.names=T)
   
-  mart_anns = aggregate(. ~ uniprot_swissprot, data=mart_anns, FUN=function(x)paste(unique(x),collapse=','))
+  mart_anns = aggregate(. ~ uniprot_swissprot, data=mart_anns, FUN=function(x)paste(unique(gsub(';','',x)),collapse=','))
   setnames(mart_anns, 'uniprot_swissprot', 'uniprot_ac')
   
   id_table_annotated = merge(id_table_split, mart_anns, 'uniprot_ac', all.x=T)
-  id_table_annotated_flat = aggregate(. ~ group_id, data=id_table_annotated, FUN=function(x)paste(unique(x),collapse=','))
+  id_table_annotated_flat = aggregate(. ~ group_id, data=id_table_annotated, FUN=function(x)paste(unique(gsub(';','',x)),collapse=','))
   results_out = merge(results, id_table_annotated_flat, by='group_id', all.x=T)
   
   unmapped = unique(results_out[is.na(results_out$uniprot_ac),uniprot_ac_col,with=F]) 
