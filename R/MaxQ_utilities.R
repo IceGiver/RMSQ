@@ -15,7 +15,7 @@ suppressMessages(library(limma))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -25,8 +25,13 @@ spec = matrix(c(
   'output'  , 'o', 1, "character", "Output file",
   'proteome'  , 'p', 1, "character", "Reference Proteome FASTA file",
   'mapping'  , 'm', 1, "character", "mapping file produced by convert-sites",
-  'biomart_db'  , 'b', 1, "character", "name of biomart database to use for mapping, default=hsapiens_gene_ensembl",
-  'mod_type','t', 1, "character", "Modification type: ub"),
+  'biomart_db'  , 'b', 1, "character", "name of biomart database to use for mapping, default=hsapiens_gene_ensembl,mouse=mmusculus_gene_ensembl",
+  'mod_type','t', 1, "character", "Modification type: ub|ph",
+  'lfc_lower','l', 1, "double", "Lower Log2FC to include for heatmap plotting",
+  'lfc_upper','u', 1, "double", "Upper Log2FC to include for heatmap plotting",
+  'q_value','q', 1, "double", "q-value (FDR) to include for heatmap plotting",
+  'labels','', 1, "character", "labels to include for heatmap plotting",
+  'identifier_column','i', 1, "character", "Identifier column"),
   byrow=T, ncol=5)
 
 opt = getopt(spec = spec, opt = commandArgs(TRUE), command = get_Rscript_filename(), usage = FALSE, debug = FALSE)
@@ -278,7 +283,7 @@ MQutil.mapSitesBack = function(input_file, mapping_file, output_file){
 }
 
 
-MQutil.plotHeat = function(input_file, output_file, labels=NULL, names='Protein', cluster_cols=F, display='log2FC'){
+MQutil.plotHeat = function(input_file, output_file, labels=NULL, names='Protein', cluster_cols=F, display='log2FC', row_names='Protein', col_names='Label'){
   heat_data = fread(input_file)
   #heat_data = mss_F[,c('uniprot_id','Label','log2FC')]
   
@@ -316,11 +321,32 @@ MQutil.plotHeat = function(input_file, output_file, labels=NULL, names='Protein'
   heat_data_w
 }
 
+## still need to make fileType, conditions, cluster_cols, display configurable through command line
+MQutil.plotHeatmap = function(input_file, output_file, fileType='l', labels='*', cluster_cols=F, display='log2FC', lfc_lower=-2, lfc_upper=2, FDR=0.05){
+  ## read input
+  input = read.delim(input_file, stringsAsFactors = F)
+  
+  ## select data points  by LFC & FDR criterium in single condition and adding corresponding data points from the other conditions
+  sign_hits = significantHits(input,labels=labels,LFC=c(lfc_lower,lfc_upper),FDR=FDR)
+  sign_labels = unique(sign_hits$Label)
+  cat(sprintf("\tSELECTED HITS FOR PLOTS WITH LFC BETWEEN %s AND %s AT %s FDR:\t%s\n",lfc_lower, lfc_upper, FDR, nrow(sign_hits)/length(sign_labels))) 
+  
+  ## REPRESENTING RESULTS AS HEATMAP
+  ## plot heat map for all contrasts
+  if(any(grepl('uniprot_genename',colnames(sign_hits)))){
+    heat_labels = paste(sign_hits$Protein,sign_hits$uniprot_genename,sep=' ')  
+  }else{
+    heat_labels = sign_hits$Protein
+  }
+  
+  heat_labels = gsub('\\sNA$','',heat_labels)
+  heat_data_w = plotHeat(mss_F=sign_hits, out_file=output_file, names=heat_labels, cluster_cols=cluster_cols, display=display)  
+}
 
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
-    #loadLibs()
+    loadLibs()
     if(opt$command == 'concat'){
       MQutil.concat(filenames=opt$files, output = opt$output)
     }else if(opt$command == 'convert-silac'){
@@ -336,6 +362,8 @@ main <- function(opt){
       MQutil.resultsWide(input_file = opt$files, output_file = opt$output )
     }else if(opt$command == 'mapback-sites'){
       MQutil.mapSitesBack(input_file = opt$files, output_file = opt$output , mapping_file = opt$mapping)
+    }else if(opt$command == 'heatmap'){
+      MQutil.plotHeatmap(input_file = opt$files, output_file = opt$output, labels = opt$labels, lfc_lower = opt$lfc_lower, lfc_upper=opt$lfc_upper, FDR = opt$q_value)
     }
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
@@ -380,5 +408,9 @@ main <- function(opt){
 # opt$files =  '~/Projects/HPCKrogan/Data/TBLMSE/results/20141124-sites-eqmed-noint/TBLMSE-cox-ub-swissprot-modK-results.txt'
 # opt$mapping =  '~/Projects/HPCKrogan/Data/TBLMSE/data/swissprot/TBLMSE-cox-ub-swissprot-modK-mapping.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/TBLMSE/results/20141124-sites-eqmed-noint/TBLMSE-cox-ub-swissprot-modK-results.txt'
+
+# opt$command = 'heatmap'
+# opt$files =  '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114/FLU-MOUSE-H1N1-UB-results-ann.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114/FLU-MOUSE-H1N1-UB-results-ann.pdf'
 
 main(opt)
