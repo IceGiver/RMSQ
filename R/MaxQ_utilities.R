@@ -15,7 +15,7 @@ suppressMessages(library(limma))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap','simplify')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -343,6 +343,12 @@ MQutil.plotHeatmap = function(input_file, output_file, fileType='l', labels='*',
   heat_data_w = plotHeat(mss_F=sign_hits, out_file=output_file, names=heat_labels, cluster_cols=cluster_cols, display=display)  
 }
 
+MQutil.simplify = function(input_file, output_file){
+  input = fread(input_file)
+  output = simplifyOutput(input)
+  write.table(output, file=output_file, sep='\t', quote=F, row.names=F, col.names=T, eol = '\n')
+}
+
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
@@ -364,6 +370,8 @@ main <- function(opt){
       MQutil.mapSitesBack(input_file = opt$files, output_file = opt$output , mapping_file = opt$mapping)
     }else if(opt$command == 'heatmap'){
       MQutil.plotHeatmap(input_file = opt$files, output_file = opt$output, labels = opt$labels, lfc_lower = opt$lfc_lower, lfc_upper=opt$lfc_upper, FDR = opt$q_value)
+    }else if(opt$command == 'simplify'){
+      MQutil.simplify(input_file = opt$files, output_file = opt$output)
     }
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
@@ -412,5 +420,9 @@ main <- function(opt){
 # opt$command = 'heatmap'
 # opt$files =  '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114/FLU-MOUSE-H1N1-UB-results-ann.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114/FLU-MOUSE-H1N1-UB-results-ann.pdf'
+
+# opt$command = 'simplify'
+# opt$files =  '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114-sites/FLU-MOUSE-H1N1-UB-results.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114-sites/FLU-MOUSE-H1N1-UB-results-simplified.txt'
 
 main(opt)

@@ -8,6 +8,7 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(pheatmap))
 suppressMessages(library(RColorBrewer))
 suppressMessages(library(data.table))
+suppressMessages(library(stringr))
 
 theme_set(theme_bw(base_size = 15, base_family="Helvetica"))
 
@@ -339,4 +340,22 @@ normalizeToReference = function(data_l_ref, ref_protein, PDF=T, output_file){
   data_l_ref$Intensity=2^(data_l_ref$Intensity)
   
   return(data_l_ref)
+}
+
+simplifyAggregate = function(str, sep=';'){
+  str_vec = unlist(str_split(str, pattern = sep))
+  str_vec = sort(unique(str_vec))
+  str_new = str_join(str_vec, collapse = sep)
+  return(str_new)
+}
+
+simplifyOutput = function(input){
+  input$Protein = apply(input, 1, function(x) simplifyAggregate(unname(x['Protein'])))
+  if(any(grepl('mod_sites',colnames(input)))){
+    input$mod_sites = apply(input, 1, function(x) simplifyAggregate(unname(x['mod_sites'])))  
+  }
+  input[,sample_1:=gsub('([A-Z,0-9,a-z,_,\\s]+)\\-{1}([A-Z,0-9,a-z,_,\\s]+)','\\1',input$Label)]
+  input[,sample_2:=gsub('([A-Z,0-9,a-z,_,\\s]+)\\-{1}([A-Z,0-9,a-z,_,\\s]+)','\\2',input$Label)]
+  input[,Label:=NULL]
+  return(input)
 }
