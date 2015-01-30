@@ -342,20 +342,40 @@ normalizeToReference = function(data_l_ref, ref_protein, PDF=T, output_file){
   return(data_l_ref)
 }
 
-simplifyAggregate = function(str, sep=';'){
+simplifyAggregate = function(str, sep=',', numeric=F){
   str_vec = unlist(str_split(str, pattern = sep))
-  str_vec = sort(unique(str_vec))
-  str_new = str_join(str_vec, collapse = sep)
+  if(numeric){
+    str_vec = sort(unique(as.numeric(str_vec)))
+  }else{
+    str_vec = sort(unique(str_vec))  
+  }
+  
+  str_new = str_join(as.character(str_vec), collapse = ';')
   return(str_new)
 }
 
 simplifyOutput = function(input){
-  input$Protein = apply(input, 1, function(x) simplifyAggregate(unname(x['Protein'])))
+  input$Protein = apply(input, 1, function(x) simplifyAggregate(unname(x['Protein']), sep = ';'))
   if(any(grepl('mod_sites',colnames(input)))){
     input$mod_sites = apply(input, 1, function(x) simplifyAggregate(unname(x['mod_sites'])))  
+  }
+  if(any(grepl('uniprot_ac',colnames(input)))){
+    input$uniprot_ac = apply(input, 1, function(x) simplifyAggregate(unname(x['uniprot_ac'])))
+  }
+  if(any(grepl('entrezgene',colnames(input)))){
+    input$entrezgene = apply(input, 1, function(x) simplifyAggregate(unname(x['entrezgene']), numeric = T))
+  }
+  if(any(grepl('uniprot_genename',colnames(input)))){
+    input$uniprot_genename = apply(input, 1, function(x) simplifyAggregate(unname(x['uniprot_genename'])))
+  }
+  if(any(grepl('description',colnames(input)))){
+    input$description = apply(input, 1, function(x) simplifyAggregate(unname(x['description'])))
   }
   input[,sample_1:=gsub('([A-Z,0-9,a-z,_,\\s]+)\\-{1}([A-Z,0-9,a-z,_,\\s]+)','\\1',input$Label)]
   input[,sample_2:=gsub('([A-Z,0-9,a-z,_,\\s]+)\\-{1}([A-Z,0-9,a-z,_,\\s]+)','\\2',input$Label)]
   input[,Label:=NULL]
+  if(any(grepl('group_id',colnames(input)))){
+    input[,group_id:=NULL]
+  }
   return(input)
 }
