@@ -15,7 +15,7 @@ suppressMessages(library(limma))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap','simplify')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap','simplify','saint-format')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -23,6 +23,7 @@ spec = matrix(c(
   'command'  , 'c', 1, "character", sprintf("command to run. Currently supported commands: %s",paste(ALLOWED_COMMANDS,collapse=',')),
   'files'  , 'f', 1, "character", "files to feed to command. accepts regexp but needs to be quoted",
   'output'  , 'o', 1, "character", "Output file",
+  'keys','k', 1, "character", "keys file",
   'proteome'  , 'p', 1, "character", "Reference Proteome FASTA file",
   'mapping'  , 'm', 1, "character", "mapping file produced by convert-sites",
   'biomart_db'  , 'b', 1, "character", "name of biomart database to use for mapping, default=hsapiens_gene_ensembl,mouse=mmusculus_gene_ensembl",
@@ -349,6 +350,64 @@ MQutil.simplify = function(input_file, output_file){
   write.table(output, file=output_file, sep='\t', quote=F, row.names=F, col.names=T, eol = '\n')
 }
 
+MQutil.MaxQToSaint = function(data_file, keys_file, ref_proteome_file){
+  data = fread(data_file)
+  keys = fread(keys_file)
+  
+  ## write baits in format
+  ## hIP101-10       PV_2C_co_uni    T
+  
+  saint_baits = keys[,c('BioReplicate','Condition','SAINT'),with=F]
+  
+  ## write interactions in format
+  ## hIP101-10       PV_2C_co_uni    Q9NTG7  1
+  
+  tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
+  tryCatch(setnames(keys, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
+  
+  cat('\tVERIFYING DATA AND KEYS\n')
+  if(!'IsotopeLabelType' %in% colnames(data)) data[,IsotopeLabelType:='L']
+  data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
+  data_f = filterMaxqData(data)
+  data_f = removeMaxQProteinGroups(data_f) ## do we want this or not?
+  ## aggregate over technical replicates if necessary
+  data_f_agg = aggregate(Intensity ~ BioReplicate+Condition+Proteins+Sequence+Charge,data=data_f,FUN = max)
+  data_f_agg = aggregate(Intensity ~ BioReplicate+Condition+Proteins,data=data_f_agg,FUN = sum)
+  ## IP name, bait name, prey name, and spectral counts or intensity values
+  saint_interactions = data_f_agg
+  
+  ## write preys in format
+  ## Q9NTG7  43573.5 Q9NTG7
+  
+  ref_proteome = read.fasta(file = ref_proteome_file, 
+                            seqtype = "AA", as.string = T,
+                            set.attributes = TRUE, legacy.mode = TRUE, seqonly = FALSE, strip.desc = FALSE)
+  p_lengths = c()
+  p_names = c()
+  for(e in ref_proteome){
+    p_lengths = c(p_lengths, nchar(e[1]))
+    p_names = c(p_names, attr(e,'name'))
+  }
+  ref_table = data.table(names=p_names, lengths=p_lengths)
+  ref_table[,uniprot_ac:=gsub('([a-z,0-9,A-Z]+\\|{1})([A-Z,0-9,\\_]+)(\\|[A-Z,a-z,0-9,_]+)','\\2',names)]
+  ref_table[,uniprot_id:=gsub('([a-z,0-9,A-Z]+\\|{1})([a-z,0-9,A-Z]+\\|{1})([A-Z,a-z,0-9,_]+)','\\3',names)]
+  
+  unique_preys = data.table(uniprot_ac=unique(data_f_agg$Proteins))
+  saint_preys = ref_table[,c('uniprot_ac','lengths','uniprot_id'),with=F]
+  saint_preys = merge(unique_preys, saint_preys, by='uniprot_ac', all.x=T)
+  missing_lengths = nrow(saint_preys[is.na(saint_preys$uniprot_id),])
+  saint_preys[is.na(saint_preys$uniprot_id),]$uniprot_id=saint_preys[is.na(saint_preys$uniprot_id),]$uniprot_ac  
+  if(missing_lengths>0){
+    cat(sprintf("\tWARNING!\tCOMPUTING %s MISSING LENGTHS WITH THE MEDIAN LENGTH FROM THE DATASET\n",missing_lengths))
+    saint_preys[is.na(saint_preys$lengths),]$lengths=median(saint_preys$lengths,na.rm = T)
+  }
+  
+  ## WRITE
+  write.table(saint_baits,file = gsub('.txt','-saint-baits.txt',data_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
+  write.table(saint_preys,file = gsub('.txt','-saint-preys.txt',data_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
+  write.table(saint_interactions,file = gsub('.txt','-saint-interactions.txt',data_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
+}
+
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
@@ -372,12 +431,19 @@ main <- function(opt){
       MQutil.plotHeatmap(input_file = opt$files, output_file = opt$output, labels = opt$labels, lfc_lower = opt$lfc_lower, lfc_upper=opt$lfc_upper, FDR = opt$q_value)
     }else if(opt$command == 'simplify'){
       MQutil.simplify(input_file = opt$files, output_file = opt$output)
+    }else if(opt$command == 'saint-format'){
+      MQutil.MaxQToSaint(data_file = opt$files, keys_file=opt$keys, ref_proteome_file = opt$proteome)
     }
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
     cat(sprintf('ALLOWED COMMANDS:\t%s\n',paste(ALLOWED_COMMANDS,collapse=','))) 
   }
 }
+
+# opt$command = 'saint-format'
+# opt$files = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-human-exvivo/AP-MS/M2/data/FLU-HUMAN-ALL-APMS-M2-data.txt'
+# opt$keys = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-human-exvivo/AP-MS/M2/data/FLU-HUMAN-ALL-APMS-M2-keys.txt'
+# opt$proteome = '~/Projects/HPCKrogan/Data/Uniprot/homo-sapiens-swissprot.fasta'
 
 # opt$command = 'heatmap'
 # opt$input = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Flu-human-exvivo/H5N1/ph//results//20141203//FLU-HUMAN-H5N1-PH-results.txt'
