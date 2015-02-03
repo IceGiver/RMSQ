@@ -366,6 +366,10 @@ MQutil.MaxQToSaint = function(data_file, keys_file, ref_proteome_file){
   tryCatch(setnames(keys, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
   
   cat('\tVERIFYING DATA AND KEYS\n')
+  if(any(!c('RawFile','IsotopeLabelType','Condition','BioReplicate','Run','SAINT') %in% colnames(keys))){
+    cat('COLNAMES IN KEYS NOT CONFORM TO SCHEMA\n\tRawFile\tIsotopeLabelType\tCondition\tBioReplicate\tRun\tSAINT\n')
+    quit()
+  } 
   if(!'IsotopeLabelType' %in% colnames(data)) data[,IsotopeLabelType:='L']
   data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
   data_f = filterMaxqData(data)
@@ -403,9 +407,9 @@ MQutil.MaxQToSaint = function(data_file, keys_file, ref_proteome_file){
   }
   
   ## WRITE
-  write.table(saint_baits,file = gsub('.txt','-saint-baits.txt',data_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
-  write.table(saint_preys,file = gsub('.txt','-saint-preys.txt',data_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
-  write.table(saint_interactions,file = gsub('.txt','-saint-interactions.txt',data_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
+  write.table(saint_baits,file = gsub('.txt','-saint-baits.txt',keys_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
+  write.table(saint_preys,file = gsub('.txt','-saint-preys.txt',keys_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
+  write.table(saint_interactions,file = gsub('.txt','-saint-interactions.txt',keys_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
 }
 
 main <- function(opt){
