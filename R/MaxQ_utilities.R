@@ -15,7 +15,7 @@ suppressMessages(library(limma))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap','simplify','saint-format')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap','simplify','saint-format','data-plots')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -412,6 +412,33 @@ MQutil.MaxQToSaint = function(data_file, keys_file, ref_proteome_file){
   write.table(saint_interactions,file = gsub('.txt','-saint-interactions.txt',keys_file), eol='\n',sep='\t', quote=F, row.names=F, col.names=F)
 }
 
+MQutil.dataPlots = function(input_file, output_file){
+  
+  data_mss = fread(input_file)
+  unique_subjects = unique(data_mss$PROTEIN)
+  condition_length = length(unique(data_mss$GROUP_ORIGINAL))
+  min_abu = min(data_mss$ABUNDANCE, na.rm = T)
+  max_abu = max(data_mss$ABUNDANCE, na.rm=T)
+  
+  pdf(output_file, width = condition_length*1.5, height = 3)
+  
+  cat('PRINTING CONDITION PLOTS\n')
+  for(subject in unique_subjects){
+    subject_data = data_mss[PROTEIN==subject,]
+    cat(sprintf('\t%s\n',subject))
+    p = ggplot(data = subject_data, aes(x=SUBJECT_ORIGINAL,y=ABUNDANCE, colour=FEATURE))
+    p = p + geom_point(size=2) + 
+      facet_wrap(facets = ~ GROUP_ORIGINAL, drop = T, scales = 'free_x', ncol = condition_length) + 
+      ylim(min_abu,max_abu) +
+      theme(axis.text.x=element_text(angle=-90,hjust=1)) +
+      guides(colour=FALSE) +
+      xlab(NULL) +
+      ggtitle(subject)
+    print(p)
+  }
+  dev.off()
+}
+
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
@@ -436,13 +463,19 @@ main <- function(opt){
     }else if(opt$command == 'simplify'){
       MQutil.simplify(input_file = opt$files, output_file = opt$output)
     }else if(opt$command == 'saint-format'){
-      MQutil.MaxQToSaint(data_file = opt$files, keys_file=opt$keys, ref_proteome_file = opt$proteome)
+      MQutil.MaxQToSaint(data_file = opt$files, keys_file =  opt$keys, ref_proteome_file = opt$proteome)
+    }else if(opt$command == 'data-plots'){
+      MQutil.dataPlots(input_file = opt$files, output_file = opt$output)
     }
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
     cat(sprintf('ALLOWED COMMANDS:\t%s\n',paste(ALLOWED_COMMANDS,collapse=','))) 
   }
 }
+
+# opt$command = 'data-plots'
+# opt$files = '~/Projects/HPCKrogan/Data/TBLMSE/data/swissprot/TBLMSE-cox-ub-swissprot-modK-mss-normalized.txt'
+# opt$output = '~/Projects/HPCKrogan/Data/TBLMSE/data/swissprot/TBLMSE-cox-ub-swissprot-modK-mss-normalized.pdf'
 
 # opt$command = 'saint-format'
 # opt$files = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-human-exvivo/AP-MS/M2/data/FLU-HUMAN-ALL-APMS-M2-data.txt'
