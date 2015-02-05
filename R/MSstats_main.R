@@ -122,7 +122,7 @@ runMSstats = function(dmss, contrasts, config){
   } 
   
   cat(sprintf('\tFITTING CONTRASTS:\t%s\n',paste(rownames(contrasts),collapse=',')))
-  write.table(mssquant, file=gsub('.txt','-mss-normalized.txt',config$files$data), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
+  write.table(mssquant, file=gsub('.txt','-mss-normalized.txt',config$files$keys), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
   results = groupComparison(data = mssquant, contrast.matrix = contrasts, labeled = as.logical(config$msstats$labeled), scopeOfBioReplication = config$msstats$scopeOfBioReplication, scopeOfTechReplication = config$msstats$scopeOfTechReplication, interference = as.logical(config$msstats$interference), equalFeatureVar = as.logical(config$msstats$equalFeatureVar), missing.action = config$msstats$missing_action)$ComparisonResult
   write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
   cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
