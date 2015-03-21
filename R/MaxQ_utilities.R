@@ -15,7 +15,7 @@ suppressMessages(library(limma))
 #########################
 ## CONFIG LOADING #######
 
-ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap','simplify','saint-format','data-plots')
+ALLOWED_COMMANDS = c('concat','convert-silac','keys','convert-sites','annotate','results-wide','mapback-sites','heatmap','simplify','saint-format','data-plots','spectral-counts')
 
 spec = matrix(c(
   'verbose', 'v', 2, "integer", "",
@@ -246,19 +246,23 @@ MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot
   
   id_table_split = unique(data.table(group_id=ids_split, uniprot_ac=uniprot_acs_split))
   
-  mart_anns = getBM(mart = mart, attributes =c('uniprot_swissprot','entrezgene','uniprot_genename','description'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
+  mart_anns_gene = getBM(mart = mart, attributes =c('uniprot_swissprot','entrezgene'), values=as.character(unique(id_table_split$uniprot_ac)), filter='uniprot_swissprot')
+  # mart_anns$description = gsub('(.*)(\\s\\[.*\\])','\\1', mart_anns$description)
+  mart = useMart(biomart = 'unimart',dataset='uniprot',verbose = T)
+  mart_anns_uni = getBM(mart = mart, attributes =c('accession','name','protein_name','gene_name'), values=as.character(unique(id_table_split$uniprot_ac)), filter='accession')
+  mart_anns = merge(mart_anns_gene, mart_anns_uni, by.x='uniprot_swissprot', by.y='accession', all=T)
   write.table(mart_anns, file=gsub('.txt','-annotation.txt',output_file), sep='\t', quote=F, row.names=F, col.names=T)
   
   mart_anns = aggregate(. ~ uniprot_swissprot, data=mart_anns, FUN=function(x)paste(unique(gsub(';','',x)),collapse=','))
   setnames(mart_anns, 'uniprot_swissprot', 'uniprot_ac')
   
-  id_table_annotated = merge(id_table_split, mart_anns, 'uniprot_ac', all.x=T)
+  id_table_annotated = merge(id_table_split, mart_anns, by='uniprot_ac', all.x=T)
   id_table_annotated_flat = aggregate(. ~ group_id, data=id_table_annotated, FUN=function(x)paste(unique(gsub(';','',x)),collapse=','))
   results_out = merge(results, id_table_annotated_flat, by='group_id', all.x=T)
-  
+  results_out[,group_id:=NULL]
   unmapped = unique(results_out[is.na(results_out$uniprot_ac),uniprot_ac_col,with=F]) 
   cat(sprintf('UNMAPPED PROTEINS\t%s\n%s\n',nrow(unmapped),paste(unmapped$Protein,collapse=',')))
-  
+  results_out[,uniprot_ac:=NULL]
   write.table(results_out, file=output_file, sep='\t', quote=F, row.names=F, col.names=T)
   #return(results_out)
   
@@ -439,6 +443,23 @@ MQutil.dataPlots = function(input_file, output_file){
   dev.off()
 }
 
+MQutil.spectralCounts = function(input_file, keys_file, output_file){
+  data = fread(input_file)
+  keys = fread(keys_file)
+  
+  tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
+  tryCatch(setnames(keys, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
+  
+  cat('\tVERIFYING DATA AND KEYS\n')
+  if(!'IsotopeLabelType' %in% colnames(data)) data[,IsotopeLabelType:='L']
+  data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
+  data_sel = data[,c('Proteins','Condition','BioReplicate','Run','MS/MS Count'),with=F]
+  setnames(data_sel,'MS/MS Count','spectral_counts')
+  data_sel[,spectral_counts:=sum(spectral_counts),by='Proteins']
+  data_sel[,bait_name:=paste(Condition, BioReplicate, Run, sep='_'), by=c('Proteins','Condition', 'BioReplicate', 'Run')]
+  write.table(data_sel[,c('bait_name','Proteins','spectral_counts'),with=F], file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
+}
+
 main <- function(opt){
   if(opt$command %in% ALLOWED_COMMANDS){
     cat(sprintf('>> EXECUTING:\t%s\n',opt$command))
@@ -466,6 +487,8 @@ main <- function(opt){
       MQutil.MaxQToSaint(data_file = opt$files, keys_file =  opt$keys, ref_proteome_file = opt$proteome)
     }else if(opt$command == 'data-plots'){
       MQutil.dataPlots(input_file = opt$files, output_file = opt$output)
+    }else if(opt$command == 'spectral-counts'){
+      MQutil.spectralCounts(input_file = opt$files, keys_file =  opt$keys, output_file = opt$output)
     }
   }else{
     cat(sprintf('COMMAND NOT ALLOWED:\t%s\n',opt$command)) 
@@ -527,5 +550,18 @@ main <- function(opt){
 # opt$command = 'simplify'
 # opt$files =  '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114-sites/FLU-MOUSE-H1N1-UB-results.txt'
 # opt$output = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/results/20150114-sites/FLU-MOUSE-H1N1-UB-results-simplified.txt'
+
+# opt$command = 'heatmap'
+# opt$files =  '~/Code/RMSQ/tests/heatmap/031615-lm-1-6-ph-mss-results.txt'
+# opt$output = '~/Code/RMSQ/tests/heatmap/031615-lm-1-6-ph-mss-results.pdf'
+# opt$labels = '*'
+# opt$lfc_lower = -2
+# opt$lfc_upper = 2
+# opt$q_value = 0.05
+  
+# opt$command = 'spectral-counts'
+# opt$files =  '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/data//FLU-MOUSE-H1N1-UB-data.txt'
+# opt$keys = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-mouse-invivo/H1N1/ub/data/FLU-MOUSE-H1N1-UB-keys.txt'
+# opt$output = '~/Desktop/test.txt'
 
 main(opt)
