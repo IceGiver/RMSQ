@@ -44,6 +44,7 @@ if ( !is.null(opt$help) ) {
   q(status=1);
 }
 
+if( is.null(opt$mod_type) ) { opt$mod_type = 'ub' }
 loadLibs = function(){
   cat(">> LOADING EXTERNAL FILES AND LIBRARIES\n")
   # set source directory
