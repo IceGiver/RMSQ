@@ -455,9 +455,9 @@ MQutil.spectralCounts = function(input_file, keys_file, output_file){
   data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
   data_sel = data[,c('Proteins','Condition','BioReplicate','Run','MS/MS Count'),with=F]
   setnames(data_sel,'MS/MS Count','spectral_counts')
-  data_sel[,spectral_counts:=sum(spectral_counts),by='Proteins']
-  data_sel[,bait_name:=paste(Condition, BioReplicate, Run, sep='_'), by=c('Proteins','Condition', 'BioReplicate', 'Run')]
-  write.table(data_sel[,c('bait_name','Proteins','spectral_counts'),with=F], file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
+  data_sel = aggregate( spectral_counts ~ Proteins+Condition+BioReplicate+Run, data=data_sel, FUN = sum)
+  data_sel = data.frame(data_sel, bait_name=paste(data_sel$Condition, data_sel$BioReplicate, data_sel$Run, sep='_'))
+  write.table(data_sel[,c('bait_name','Proteins','spectral_counts')], file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
 }
 
 main <- function(opt){
