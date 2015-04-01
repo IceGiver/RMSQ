@@ -279,17 +279,19 @@ main <- function(opt){
     }
     
     ## solely for debugging purposes
-    if(DEBUG){
-      if(!DEBUGALL){
-        set.seed(7)
-        protein_sample  = sample(unique(dmss$ProteinName), 100)
-        dmss_sample = dmss[dmss$ProteinName %in% protein_sample,]
-        if(DEBUGONE){
-          dmss_sample_1 = dmss[dmss$Protein==DEBUGSUBJECT,]
-          dmss_sample = rbind(dmss_sample, dmss_sample_1)
+    if(exists("DEBUG")){
+      if(DEBUG){
+        if(!DEBUGALL){
+          set.seed(7)
+          protein_sample  = sample(unique(dmss$ProteinName), 100)
+          dmss_sample = dmss[dmss$ProteinName %in% protein_sample,]
+          if(DEBUGONE){
+            dmss_sample_1 = dmss[dmss$Protein==DEBUGSUBJECT,]
+            dmss_sample = rbind(dmss_sample, dmss_sample_1)
+          }
+          dmss = dmss_sample
         }
-        dmss = dmss_sample
-      }
+      }  
     }
     
     contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
