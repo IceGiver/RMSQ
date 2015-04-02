@@ -3,7 +3,6 @@
 ###############################
 ## FILE AND LIB LOADING #######
 
-rm(list = ls(all = TRUE)) 
 cat(">> LOADING EXTERNAL FILES AND LIBRARIES\n")
 
 suppressMessages(library(getopt))
