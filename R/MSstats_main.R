@@ -196,9 +196,9 @@ main <- function(opt){
   
   if(config$data$enabled){
     cat(">> LOADING DATA\n")
-    data = fread(config$files$data, stringsAsFactors=F)
+    data = fread(config$files$data, stringsAsFactors=F, integer64 = 'double')
     setnames(data, colnames(data),gsub('\\s','.',colnames(data)))
-    keys = fread(config$files$keys, stringsAsFactors=F)
+    keys = fread(config$files$keys, stringsAsFactors=F, integer64 = 'double')
     
     ## the following lines were added to integrate the Label with the Filename when using multiple labels (e.g. H/L)
     ## currently we leave this in because the MSstats discinction on labeltype doesn't work 
@@ -258,7 +258,7 @@ main <- function(opt){
       
     }else{
       cat(sprintf("\tREADING PREPROCESSED\t%s\n", config$msstats$msstats_input)) 
-      dmss = fread(config$msstats$msstats_input, stringsAsFactors=F)
+      dmss = fread(config$msstats$msstats_input, stringsAsFactors=F, integer64 = 'double')
     }
     
     cat(sprintf('>>LOADING MSSTATS %s VERSION\n', config$msstats$version))
