@@ -44,7 +44,17 @@ if ( !is.null(opt$help) ) {
   q(status=1);
 }
 
+# warnings for when arguments are forgotten
+if( is.null(opt$command) ) { cat("NO COMMAND (-c) ENTERED!!\n") }
+if( is.null(opt$files) ) { cat("NO FILE (-f) SEPCIFIED!!\n") }
+if( is.null(opt$output) ) { cat("NO OUTPUT FILE (-o) SEPCIFIED!!\n") }
+# set default values for arguments
 if( is.null(opt$mod_type) ) { opt$mod_type = 'ub' }
+if( is.null(opt$lfc_lower) ) { opt$lfc_lower = '-2' }
+if( is.null(opt$lfc_upper) ) { opt$lfc_upper = '2' }
+if( is.null(opt$q_value) ) { opt$q_value = '0.05' }
+if( is.null(opt$labels) ) { opt$labels = '*' }
+
 loadLibs = function(){
   cat(">> LOADING EXTERNAL FILES AND LIBRARIES\n")
   # set source directory
