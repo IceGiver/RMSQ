@@ -74,7 +74,7 @@ MQutil.SILACToLong = function(filename, output){
   library(reshape2)
   file = Sys.glob(filename)
   cat(sprintf('\tPROCESSING:\n\t%s\n',paste(file,collapse='\n\t')))
-  tmp = fread(file)
+  tmp = fread(file, integer64 = 'double')
   tmp_long = reshape2::melt(tmp, measure.vars = c('Intensity L','Intensity H'))
   tmp_long[,Intensity:=NULL]
   setnames(tmp_long,'value','Intensity')
@@ -95,7 +95,7 @@ MQutil.concat = function(filenames, output){
   
   for(f in 1:length(files)){
     file = files[f]
-    tmp = fread(file, stringsAsFactors=F, colClasses = c(Intensity='character'))
+    tmp = fread(file, stringsAsFactors=F, colClasses = c(Intensity='character'), integer64 = 'double')
     tmp$Intensity = as.numeric(tmp$Intensity)
     #tmp$Intensity L = as.numeric(tmp[,'Intensity L',with=F])
     
@@ -119,7 +119,7 @@ MQutil.getKeys = function(filename, output){
   file = Sys.glob(filename)
   cat(sprintf('\tPROCESSING:\n\t%s\n',paste(file,collapse='\n\t')))
   #tmp = data.table(read.delim(file, stringsAsFactors=F))
-  tmp = fread(file, stringsAsFactors=F)
+  tmp = fread(file, stringsAsFactors=F, integer64 = 'double')
   write.table(unique(tmp$Raw.file),file=output, eol='\n', sep='\t', quote=F, row.names=F, col.names=F)
   cat(sprintf('\tWRITTEN\t%s\n',output))
 }
@@ -166,7 +166,7 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
   ## map mod sites in data to index 
   
   ## read in maxq. data
-  maxq_data = fread(maxq_file)
+  maxq_data = fread(maxq_file, integer64 = 'double')
   maxq_data = maxq_data[grep("CON__|REV__",maxq_data$Proteins, invert=T),]
   unique_peptides_in_data = unique(maxq_data[,c('Proteins','Modified sequence'),with=F])
   setnames(unique_peptides_in_data,'Modified sequence','sequence')
@@ -238,7 +238,7 @@ MQutil.ProteinToSiteConversion <- function (maxq_file, ref_proteome_file, output
 MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot_ac_col='Protein', group_sep=';', db='hsapiens_gene_ensembl'){
   
   cat(">> ANNOTATING\n")
-  results = fread(input_file)
+  results = fread(input_file, integer64 = 'double')
   mart = useMart(biomart = 'ensembl', dataset=db,verbose = T)
   ids = unique(results[,uniprot_ac_col,with=F])
   id_table = data.table(group_id=1:nrow(ids), uniprot_acs=ids)
@@ -280,7 +280,7 @@ MQutil.annotate = function(input_file=opt$input, output_file=opt$output, uniprot
 }
 
 MQutil.resultsWide = function(input_file, output_file){
-  input = fread(input_file)
+  input = fread(input_file, integer64 = 'double')
   input_l = melt(data = input[,c('Protein', 'Label','log2FC','adj.pvalue'),with=F],id.vars=c('Protein', 'Label'))
   
   ## then cast to get combinations of LFCV/PVAl and Label as columns
@@ -289,9 +289,9 @@ MQutil.resultsWide = function(input_file, output_file){
 }
 
 MQutil.mapSitesBack = function(input_file, mapping_file, output_file){
-  input = fread(input_file)
+  input = fread(input_file, integer64 = 'double')
   setnames(input,'Protein','mod_sites')
-  mapping = fread(mapping_file)
+  mapping = fread(mapping_file, integer64 = 'double')
   mapping = unique(mapping[!is.na(mod_sites),c('Protein','mod_sites'),with=F])
   mapping = aggregate(Protein ~ mod_sites, data=mapping, FUN=function(x)paste(x,collapse=';'))
   out = merge(input, mapping, by='mod_sites', all.x=T)
@@ -300,7 +300,7 @@ MQutil.mapSitesBack = function(input_file, mapping_file, output_file){
 
 
 MQutil.plotHeat = function(input_file, output_file, labels=NULL, names='Protein', cluster_cols=F, display='log2FC', row_names='Protein', col_names='Label'){
-  heat_data = fread(input_file)
+  heat_data = fread(input_file, integer64 = 'double')
   #heat_data = mss_F[,c('uniprot_id','Label','log2FC')]
   
   ## good
@@ -360,14 +360,14 @@ MQutil.plotHeatmap = function(input_file, output_file, fileType='l', labels='*',
 }
 
 MQutil.simplify = function(input_file, output_file){
-  input = fread(input_file)
+  input = fread(input_file, integer64 = 'double')
   output = simplifyOutput(input)
   write.table(output, file=output_file, sep='\t', quote=F, row.names=F, col.names=T, eol = '\n')
 }
 
 MQutil.MaxQToSaint = function(data_file, keys_file, ref_proteome_file){
-  data = fread(data_file)
-  keys = fread(keys_file)
+  data = fread(data_file, integer64 = 'double')
+  keys = fread(keys_file, integer64 = 'double')
   
   ## write baits in format
   ## hIP101-10       PV_2C_co_uni    T
@@ -429,7 +429,7 @@ MQutil.MaxQToSaint = function(data_file, keys_file, ref_proteome_file){
 
 MQutil.dataPlots = function(input_file, output_file){
   
-  data_mss = fread(input_file)
+  data_mss = fread(input_file, integer64 = 'double')
   unique_subjects = unique(data_mss$PROTEIN)
   condition_length = length(unique(data_mss$GROUP_ORIGINAL))
   min_abu = min(data_mss$ABUNDANCE, na.rm = T)
@@ -455,8 +455,8 @@ MQutil.dataPlots = function(input_file, output_file){
 }
 
 MQutil.spectralCounts = function(input_file, keys_file, output_file){
-  data = fread(input_file)
-  keys = fread(keys_file)
+  data = fread(input_file, integer64 = 'double')
+  keys = fread(keys_file, integer64 = 'double')
   
   tryCatch(setnames(data, 'Raw file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
   tryCatch(setnames(keys, 'Raw.file', 'RawFile'), error=function(e) cat('Raw.file not found\n'))
@@ -466,9 +466,9 @@ MQutil.spectralCounts = function(input_file, keys_file, output_file){
   data = mergeMaxQDataWithKeys(data, keys, by = c('RawFile','IsotopeLabelType'))
   data_sel = data[,c('Proteins','Condition','BioReplicate','Run','MS/MS Count'),with=F]
   setnames(data_sel,'MS/MS Count','spectral_counts')
-  data_sel[,spectral_counts:=sum(spectral_counts),by='Proteins']
-  data_sel[,bait_name:=paste(Condition, BioReplicate, Run, sep='_'), by=c('Proteins','Condition', 'BioReplicate', 'Run')]
-  write.table(data_sel[,c('bait_name','Proteins','spectral_counts'),with=F], file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
+  data_sel = aggregate( spectral_counts ~ Proteins+Condition+BioReplicate+Run, data=data_sel, FUN = sum)
+  data_sel = data.frame(data_sel, bait_name=paste(data_sel$Condition, data_sel$BioReplicate, data_sel$Run, sep='_'))
+  write.table(data_sel[,c('bait_name','Proteins','spectral_counts')], file=output_file, eol='\n', sep='\t', quote=F, row.names=F, col.names=T)
 }
 
 main <- function(opt){
@@ -530,8 +530,8 @@ main <- function(opt){
 # opt$output = '~/Projects/HPCKrogan/Data/FluOMICS/projects/Proteomics/Flu-human-exvivo/H5N1/ph//results//20141214//FLU-HUMAN-H5N1-PH-results-mapped-ann.txt'
 
 # opt$command = 'convert-silac'
-# opt$files = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence.txt'
-# opt$output = '~/Projects/HPCKrogan/Data/HIV-proteomics/Meena/abundance/HIV_vs_MOCK_PROTEIN_evidence_split.txt'
+# opt$files = '~/Code/RMSQ/tests/abundance/ENTERO-LG-ABU-data.txt'
+# opt$output = '~/Code/RMSQ/tests/abundance/ENTERO-LG-ABU-data-long.txt'
 
 # opt$command = 'concat'
 # opt$files = '~/Projects/HPCKrogan/Data/Mtb/Files/073113*evidence.txt'

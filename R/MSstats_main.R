@@ -3,7 +3,6 @@
 ###############################
 ## FILE AND LIB LOADING #######
 
-rm(list = ls(all = TRUE)) 
 cat(">> LOADING EXTERNAL FILES AND LIBRARIES\n")
 
 suppressMessages(library(getopt))
@@ -108,7 +107,8 @@ runMSstats = function(dmss, contrasts, config){
     normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
     mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
   }else{
-    mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method , fillIncompleteRows=T)
+    cat(sprintf('>> NORMALIZATION\t%s\n',config$msstats$normalization_method))
+    mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method , fillIncompleteRows = F, betweenRunInterferenceScore = F, FeatureSelection = F)
   } 
   
   if(grepl('after', config$msstats$profilePlots)){
@@ -196,9 +196,9 @@ main <- function(opt){
   
   if(config$data$enabled){
     cat(">> LOADING DATA\n")
-    data = fread(config$files$data, stringsAsFactors=F)
+    data = fread(config$files$data, stringsAsFactors=F, integer64 = 'double')
     setnames(data, colnames(data),gsub('\\s','.',colnames(data)))
-    keys = fread(config$files$keys, stringsAsFactors=F)
+    keys = fread(config$files$keys, stringsAsFactors=F, integer64 = 'double')
     
     ## the following lines were added to integrate the Label with the Filename when using multiple labels (e.g. H/L)
     ## currently we leave this in because the MSstats discinction on labeltype doesn't work 
@@ -254,11 +254,11 @@ main <- function(opt){
       
       ## make sure there are no doubles !!
       ## doubles could arise when protein groups are being kept and the same peptide is assigned to a unique Protein. Not sure how this is possible but it seems to be like this in maxquant output. A possible explanation is that these peptides have different retention times (needs to be looked into)
-      dmss = data.frame(dmss[,j=list(ProteinName=paste(ProteinName,collapse=';'),Intensity=median(Intensity)),by=c('PeptideSequence','ProductCharge','PrecursorCharge','FragmentIon','IsotopeLabelType','Run','BioReplicate','Condition')])
+      dmss = data.frame(dmss[,j=list(ProteinName=paste(ProteinName,collapse=';'),Intensity=median(Intensity, na.rm=T)),by=c('PeptideSequence','ProductCharge','PrecursorCharge','FragmentIon','IsotopeLabelType','Run','BioReplicate','Condition')])
       
     }else{
       cat(sprintf("\tREADING PREPROCESSED\t%s\n", config$msstats$msstats_input)) 
-      dmss = fread(config$msstats$msstats_input, stringsAsFactors=F)
+      dmss = fread(config$msstats$msstats_input, stringsAsFactors=F, integer64 = 'double')
     }
     
     cat(sprintf('>>LOADING MSSTATS %s VERSION\n', config$msstats$version))
@@ -277,11 +277,20 @@ main <- function(opt){
       }
     }
     
-    if(RUNMODE == 'DEBUG'){
-      set.seed(7)
-      protein_sample  = sample(unique(dmss$ProteinName), 100)
-      dmss_sample = dmss[dmss$ProteinName %in% protein_sample,]
-      dmss = dmss_sample
+    ## solely for debugging purposes
+    if(exists("DEBUG")){
+      if(DEBUG){
+        if(!DEBUGALL){
+          set.seed(7)
+          protein_sample  = sample(unique(dmss$ProteinName), 100)
+          dmss_sample = dmss[dmss$ProteinName %in% protein_sample,]
+          if(DEBUGONE){
+            dmss_sample_1 = dmss[dmss$Protein==DEBUGSUBJECT,]
+            dmss_sample = rbind(dmss_sample, dmss_sample_1)
+          }
+          dmss = dmss_sample
+        }
+      }  
     }
     
     contrasts = as.matrix(read.delim(config$files$contrasts, stringsAsFactors=F))
@@ -316,5 +325,10 @@ if ( !is.null(opt$help) ) {
 ## TEST WORKS WITH LATEST CODE
 # opt = c(opt, config='tests/LabelFree-ub/LabelFree-ub-test.yaml')
 
-RUNMODE='RUN'
-main(opt)
+if(!exists("DEBUG")){
+  cat(">> RUN MODE\n")
+  main(opt)
+}else{
+  cat(">> DEBUG MODE\n")
+} 
+# rm(list = ls(all = TRUE)) 

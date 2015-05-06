@@ -1,0 +1,192 @@
+---
+title: "RMSQ_testing"
+author: "Doug Sanders"
+date: "March 31, 2015"
+output: html_document
+---
+
+Set appropriate paths:
+
+```{r, echo=TRUE}
+suppressMessages(require(testthat))
+Path_to_input_object <- "LabelFree-ub/data/test1_input/"
+Path_to_new_Code <- "MSstats.daily_3_0_1/R/"
+#Path_to_new_Code <- "MSstats.daily_2_3_5/R/"
+
+```
+
+Source in Code:
+
+```{r, echo=TRUE}
+source("MSstat_main_functions_for_test.R")
+source("../R/MSstats_functions.R")
+
+sourceDir <- function(path, trace = TRUE, ...) {
+    for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
+       if(trace) cat(nm,":")
+       source(file.path(path, nm), ...)
+       if(trace) cat("\n")
+    }
+ }
+
+sourceDir(Path_to_new_Code)
+```
+
+```{r, echo=FALSE, error=TRUE}
+
+        load(file = paste0(Path_to_input_object, "config" ))
+        load(file = paste0(Path_to_input_object, "R_test_objects" ))
+```
+
+```{r, echo=FALSE, error=TRUE}
+output <- capture.output(data_compare <- mergeMaxQDataWithKeys(data1, keys1, 
+                                          by = c('RawFile','IsotopeLabelType')))
+                cat("\t TESTING FUNCTION mergeMaxQDataWithKeys \n")
+expect_that(data_compare,  equals(data2))
+
+output <- capture.output(data_compare <- if(config$filters$enabled) filterData(data3, config) else data3)
+        cat("\t TESTING FUNCTION filterData \n")
+expect_that(data_compare,  equals(data_f))
+
+output <- capture.output(data_compare <- if(config$files$sequence_type == 'modified') castFun = castMaxQToWidePTM else castFun = castMaxQToWide)
+
+output <- capture.output(data_compare <- castFun(data_f))
+        cat("\t TESTING FUNCTION castFun \n")
+expect_that(data_compare,  equals(data_w))
+        
+```
+
+```{r, echo=FALSE, eval=T, error=TRUE, message=FALSE, results='hide'}
+options(warn=-1)
+#options(warn=0)
+        if(grepl('before', config$msstats$profilePlots)){
+                
+ #               dmss_before <- dmss
+ #              save_object("dmss_before")
+                load(file = paste0(Path_to_input_object, "dmss_before" ))
+ #                mssquant = dataProcess(dmss, normalization=F, fillIncompleteRows = T)            
+#                mssquant_before <- mssquant
+#                save_object("mssquant_before")  
+                load(file = paste0(Path_to_input_object, "mssquant_before" ))
+#                cat("\t TESTING FUNCTION dataProcess - logic:Before \n")
+ #               expect_that(dataProcess(dmss, normalization=F, fillIncompleteRows = T),  equals(mssquant_before))              
+        data_compare <- dataProcess(dmss, normalization=F, fillIncompleteRows = T)
+                
+#                 dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-before',config$files$output))
+#                 dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-before',config$files$output))
+        }
+```
+
+```{r, echo=FALSE, error=TRUE}
+ if(grepl('before', config$msstats$profilePlots)){
+                                 cat("\t TESTING FUNCTION  dataProcess - logic:Before \n")
+         expect_that(data_compare,  equals(mssquant_before), info = "tested")
+         }
+```
+
+```{r, echo=FALSE, eval=T, error=TRUE, message=FALSE, results='hide'}
+        
+        if(!is.null(config$msstats$normalization_reference) & config$msstats$normalization_method == 'globalStandards'){
+#                normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
+#                mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
+#                 mssquant_normalization_refs <- mssquant
+#                 dmss_normalization_refs <- dmss
+#                 save_object("mssquant_normalization_refs") 
+#                 save_object("dmss_normalization_refs")
+#                 save_object("normalization_refs")  
+                load(file = paste0(Path_to_input_object, "mssquant_normalization_refs" ))
+                load(file = paste0(Path_to_input_object, "dmss_normalization_refs" ))
+                load(file = paste0(Path_to_input_object, "normalization_refs" ))  
+#                cat("\t TESTING FUNCTION dataProcess - logic:refs \n")
+#                expect_that(dataProcess(dmss_normalization_refs, normalization=config$msstats$normalization_method, 
+#                                        nameStandards=normalization_refs , fillIncompleteRows=T),  equals(mssquant_normalization_refs))              
+ 
+     data_compare1 <- dataProcess(dmss_normalization_refs, normalization=config$msstats$normalization_method, 
+                                        nameStandards=normalization_refs , fillIncompleteRows=T)
+              
+                
+        }else{
+#                mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method , fillIncompleteRows=T)
+#                 mssquant_normalization_refs_else <- mssquant 
+#                 dmss_normalization_refs_else <- dmss
+#                 save_object("mssquant_normalization_refs_else")
+#                 save_object("dmss_normalization_refs_else") 
+                load(file = paste0(Path_to_input_object, "mssquant_normalization_refs_else" ))
+                load(file = paste0(Path_to_input_object, "dmss_normalization_refs_else" ))
+                cat("\t TESTING FUNCTION dataProcess - logic:refs_else \n")
+ #               expect_that(dataProcess(dmss, normalization=config$msstats$normalization_method , 
+ #                                       fillIncompleteRows=T),  equals(mssquant_normalization_refs_else))              
+                data_compare2 <-  dataProcess(dmss, normalization=config$msstats$normalization_methodon_method , 
+                                            fillIncompleteRows=T)
+
+ }
+```
+
+```{r, echo=FALSE, error=TRUE}
+        if(!is.null(config$msstats$normalization_reference) & config$msstats$normalization_method == 'globalStandards'){
+                cat("\t TESTING FUNCTION dataProcess - logic:refs \n")                      
+          expect_that(data_compare1,  equals(mssquant_normalization_refs), info = "Tested")
+              
+        }else{
+                        cat("\t TESTING FUNCTION dataProcess - logic:refs_else \n")
+                expect_that(data_compare2, equals(mssquant_normalization_refs_else), info = "Tested")
+
+ }
+
+
+```
+
+
+
+
+
+```{r, echo=FALSE, eval=T, error=TRUE, message=FALSE, results='hide'}
+
+        
+#         if(grepl('after', config$msstats$profilePlots)){
+#                 dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-after',config$files$output))
+#                 dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-after',config$files$output))
+#         }
+#         
+#         if(!all(levels(mssquant$GROUP_ORIGINAL) == colnames(contrasts))){
+#                 cat(sprintf('\tERROR IN CONTRAST COMPARISON: GROUP LEVELS DIFFERENT FROM CONTRASTS FILE\n\tGROUP LEVELS\t%s\n\tCONTRASTS FILE\t%s\n', paste(levels(mssquant$GROUP_ORIGINAL),collapse=','),paste(colnames(contrasts),collapse=',')))
+#                 quit()
+#         } 
+        
+#         cat(sprintf('\tFITTING CONTRASTS:\t%s\n',paste(rownames(contrasts),collapse=',')))
+#         write.table(mssquant, file=gsub('-results.txt','-mss-normalized.txt',config$files$output), 
+#                       eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
+#         results = groupComparison(data = mssquant, contrast.matrix = contrasts, 
+#                       labeled = as.logical(config$msstats$labeled), scopeOfBioReplication = config$msstats$scopeOfBioReplication, 
+#                        scopeOfTechReplication = config$msstats$scopeOfTechReplication, interference = as.logical(config$msstats$interference), 
+#                        equalFeatureVar = as.logical(config$msstats$equalFeatureVar), 
+#                        missing.action = config$msstats$missing_action)$ComparisonResult
+#         mssquant_groupComparison <- mssquant;     contrasts_groupComparison  <- contrasts; results_groupComparison  <- results
+#         save_object("mssquant_groupComparison")  ; save_object("contrasts_groupComparison"); save_object("results_groupComparison")  
+        load(file = paste0(Path_to_input_object, "mssquant_groupComparison" ))
+        load(file = paste0(Path_to_input_object, "contrasts_groupComparison" ))
+        load(file = paste0(Path_to_input_object, "results_groupComparison" ))
+
+        cat("\t TESTING FUNCTION groupComparison \n")
+     
+               data_compare3 <- groupComparison(data = mssquant_groupComparison, contrast.matrix = contrasts_groupComparison, 
+                                    labeled = as.logical(config$msstats$labeled), 
+                                    scopeOfBioReplication = config$msstats$scopeOfBioReplication, 
+                                    scopeOfTechReplication = config$msstats$scopeOfTechReplication, 
+                                    interference = as.logical(config$msstats$interference), 
+                                    equalFeatureVar = as.logical(config$msstats$equalFeatureVar), 
+                                    missing.action = config$msstats$missing_action)$ComparisonResult
+            
+ 
+#         write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
+#         cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
+#         return(results)
+#}
+
+```
+
+```{r, echo=FALSE, error=TRUE}
+                cat("\t TESTING FUNCTION groupComparison \n")
+            expect_that(data_compare3, equals(results_groupComparison))
+```
+
