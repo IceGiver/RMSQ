@@ -7,7 +7,6 @@ cat(">> LOADING EXTERNAL FILES AND LIBRARIES\n")
 
 suppressMessages(library(getopt))
 suppressMessages(library(yaml))
-suppressMessages(library(biomaRt))
 
 # set source directory
 args <- commandArgs(trailingOnly = F) 
@@ -97,36 +96,91 @@ normalizeData = function(data_w, config){
 
 runMSstats = function(dmss, contrasts, config){
   
-  if(grepl('before', config$msstats$profilePlots)){
-    mssquant = dataProcess(dmss, normalization=F, fillIncompleteRows = T)  
-    dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-before',config$files$output))
-    dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-before',config$files$output))
+## current options of msstats functions block that can be set through the config file
+## for now we'll try to map them all so the config file format still works
+## later we'll change the config file format to be able to pass on all new options
+  
+#   normalization_method : OK
+#   normalization_reference : OK
+#   missing_action : is now called 'cutoffCensored' but be aware because previous options (impute, nointeraction, remove) are changed to (minEachProtein, minFeature, minRun) : OK
+#   interference : is now called 'betweenRunInterferenceScore'
+#   scopeOfTechReplication : obsolete (is set fixed in groupComparison) OK
+#   scopeOfBioReplication : obsolete (is set fixed in groupComparison) OK
+#   equalFeatureVar : OK 
+#   labeled : obsolete (is probably globalStandards now ??) OK
+  
+  if(config$msstats$missing_action %in% c('impute', 'nointeraction', 'remove')){
+    cat(sprintf('\t WARNING : MISSING ACTION NO LONGER SUPPORTED:\t%s\n
+                \t DEFAULTING TO\t cutoffCensored=minRun and censoredInt=NULL', config$msstats$missing_action))
+    config$msstats$missing_action = 'minRun'
   }
   
-  if(!is.null(config$msstats$normalization_reference) & config$msstats$normalization_method == 'globalStandards'){
-    normalization_refs = unlist(lapply(strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
-    mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method, nameStandards=normalization_refs , fillIncompleteRows=T)
+  ## DATA PROCESS
+  
+  if(grepl('before', config$msstats$profilePlots)){
+    mssquant = dataProcess(raw=dmss, 
+                           betweenRunInterferenceScore = config$msstats$interference,
+                           cutoffCensored = config$msstats$missing_action,
+                           normalization=F,
+                           equalFeatureVar=config$msstats$equalFeatureVar)  
+    dataProcessPlots(data=mssquant, 
+                     type="ProfilePlot", 
+                     featureName="Peptide", 
+                     address=gsub('.txt','-before',config$files$output))
+    dataProcessPlots(data=mssquant, 
+                     type="QCPlot", 
+                     address=gsub('.txt','-before',config$files$output))
+  }
+  
+  cat(sprintf('>> NORMALIZATION\t%s\n',config$msstats$normalization_method))
+  
+  if(!is.null(config$msstats$normalization_reference) & 
+       config$msstats$normalization_method == 'globalStandards'){
+    normalization_refs = unlist(lapply(
+      strsplit(config$msstats$normalization_reference, split = ','), FUN=trim))
+    mssquant = dataProcess(raw=dmss, 
+                           betweenRunInterferenceScore = config$msstats$interference,
+                           cutoffCensored = config$msstats$missing_action,
+                           normalization=config$msstats$normalization_method, 
+                           nameStandards=normalization_refs,
+                           equalFeatureVar=config$msstats$equalFeatureVar)
   }else{
-    cat(sprintf('>> NORMALIZATION\t%s\n',config$msstats$normalization_method))
-    mssquant = dataProcess(dmss, normalization=config$msstats$normalization_method , fillIncompleteRows = F, betweenRunInterferenceScore = F, FeatureSelection = F)
+    mssquant = dataProcess(raw=dmss, 
+                           betweenRunInterferenceScore = config$msstats$interference,
+                           cutoffCensored = config$msstats$missing_action,
+                           normalization=config$msstats$normalization_method,
+                           equalFeatureVar=config$msstats$equalFeatureVar)
   } 
   
   if(grepl('after', config$msstats$profilePlots)){
-    dataProcessPlots(data=mssquant, type="ProfilePlot", featureName="Peptide", address=gsub('.txt','-after',config$files$output))
-    dataProcessPlots(data=mssquant, type="QCPlot", address=gsub('.txt','-after',config$files$output))
+    dataProcessPlots(data=mssquant, 
+                     type="ProfilePlot", 
+                     featureName="Peptide", 
+                     address=gsub('.txt','-after',config$files$output))
+    dataProcessPlots(data=mssquant, 
+                     type="QCPlot", 
+                     address=gsub('.txt','-after',config$files$output))
   }
+  ## write out normalized data
+  write.table(mssquant$ProcessedData, file=gsub('.txt','-mss-normalized.txt',config$files$output), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
   
+  ## CHECKING CONTRAST FILE
   if(!all(levels(mssquant$GROUP_ORIGINAL) == colnames(contrasts))){
     cat(sprintf('\tERROR IN CONTRAST COMPARISON: GROUP LEVELS DIFFERENT FROM CONTRASTS FILE\n\tGROUP LEVELS\t%s\n\tCONTRASTS FILE\t%s\n', paste(levels(mssquant$GROUP_ORIGINAL),collapse=','),paste(colnames(contrasts),collapse=',')))
     quit()
-  } 
+  }else{
+    cat(sprintf('\tFITTING CONTRASTS:\t%s\n',paste(rownames(contrasts),collapse=','))) 
+  }
   
-  cat(sprintf('\tFITTING CONTRASTS:\t%s\n',paste(rownames(contrasts),collapse=',')))
-  write.table(mssquant, file=gsub('.txt','-mss-normalized.txt',config$files$output), eol="\n", sep="\t", quote=F, row.names=F, col.names=T)
-  results = groupComparison(data = mssquant, contrast.matrix = contrasts, labeled = as.logical(config$msstats$labeled), scopeOfBioReplication = config$msstats$scopeOfBioReplication, scopeOfTechReplication = config$msstats$scopeOfTechReplication, interference = as.logical(config$msstats$interference), equalFeatureVar = as.logical(config$msstats$equalFeatureVar), missing.action = config$msstats$missing_action)$ComparisonResult
-  write.table(results, file=config$files$output, eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
+  ## GROUP COMPARISON  
+  results = groupComparison(data = mssquant, 
+                            contrast.matrix = contrasts)
+  write.table(results$ComparisonResult, 
+              file=config$files$output, 
+              eol="\n", sep="\t", quote=F, row.names=F, col.names=T)  
+  
   cat(sprintf(">> WRITTEN\t%s\n",config$files$output))
-  return(results)
+  return(results$ComparisonResult)
 }
 
 
@@ -146,6 +200,7 @@ convertDataLongToMss = function(data_w, keys, config){
 writeExtras = function(results, config){
   cat(">> ANNOTATING\n")
   if(config$output_extras$biomart){
+    suppressMessages(library(biomaRt))
     #mart = useMart(biomart = 'unimart')
     mart = useMart(biomart = 'unimart', dataset = 'uniprot', verbose = T)
     mart_anns = AnnotationDbi::select(mart, keytype='accession', columns=c('accession','name','protein_name','gene_name','ensembl_id'), keys=as.character(unique(results$Protein)))
@@ -323,7 +378,7 @@ if ( !is.null(opt$help) ) {
 }
 
 ## TEST WORKS WITH LATEST CODE
-# opt = c(opt, config='tests/LabelFree-ub/LabelFree-ub-test.yaml')
+#opt = c(opt, config='tests/LabelFree-ub-daily/LabelFree-ub-test-MSstats-daily.yaml')
 
 if(!exists("DEBUG")){
   cat(">> RUN MODE\n")
